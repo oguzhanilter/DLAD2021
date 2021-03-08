@@ -4,11 +4,8 @@ import numpy as np
 from PIL import Image
 from load_data import load_data
 
-
 relative_path_to_data = 'data'
 data_file_name = 'data.p'
-
-
 
 def get_data():
     script_path = os.path.dirname(os.path.realpath(__file__))
@@ -22,12 +19,17 @@ def scale_to_255(a, min, max, dtype=np.uint8):
     """
     return (((a - min) / float(max - min)) * 255).astype(dtype)
 
+
+# In our case side/front/rear range is 120m 
+# The LIDAR sensor is located at 1.73 m above the ground so min_height is -1.73
+# The max height that can be calculated is tan(vertical range upwards) * range + LIDAR location
+# Vertical Range Upwards is 0.2 degree
 def birds_eye_point_cloud(points,
-                          side_range=(-10, 10),
-                          fwd_range=(-10,10),
-                          res=0.1,
-                          min_height = -2.73,
-                          max_height = 1.27,
+                          side_range=(-120, 120),
+                          fwd_range=(-120,120),
+                          res=0.2,
+                          min_height = -1.73,
+                          max_height = 4.19,
                           saveto=None):
     """ Creates an 2D birds eye view representation of the point cloud data.
         You can optionally save the image to specified filename.
@@ -92,7 +94,17 @@ def birds_eye_point_cloud(points,
     x_max = int((side_range[1] - side_range[0])/res)
     y_max = int((fwd_range[1] - fwd_range[0])/res)
     im = np.zeros([y_max, x_max], dtype=np.uint8)
-    im[-y_img, x_img] = pixel_values # -y because images start from top left
+
+    # If multiple points lie within the same bin, the highest intensity point should be sampled.
+    sorted_inds = r_lidar.argsort()
+    x_img = x_img[sorted_inds]
+    y_img = y_img[sorted_inds]
+    pixel_values = pixel_values[sorted_inds]
+
+    # -y because images start from top left
+    im[-y_img, x_img] = pixel_values 
+
+    # Add an arrow to indicate the direction of the ego-vehicle
 
     # Convert from numpy array to a PIL image
     im = Image.fromarray(im)
@@ -115,8 +127,8 @@ if __name__ =="__main__":
                           side_range=(-100, 100),
                           fwd_range=(-100,100),
                           res=0.2,
-                          min_height = -2.73,
-                          max_height = 1.27,
+                          min_height = -1.73,
+                          max_height = 0,
                           saveto=None)
 
     
