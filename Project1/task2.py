@@ -76,6 +76,6 @@ if __name__ =="__main__":
 
     xy = projection(velo_point_cloud,velo_mat_T,cam_mat_P)
     filtered_xy = filter_indices_xy(xy, cam_image.shape)
-    new_image = visulize(cam_image, filtered_xy, point_labels, label_color_map)
+    new_image = visualize(cam_image, filtered_xy, point_labels, label_color_map)
     im = Image.fromarray(new_image)
     im.show()
