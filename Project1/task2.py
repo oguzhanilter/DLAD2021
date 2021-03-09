@@ -13,8 +13,28 @@ def get_data():
     data = load_data(data_path)
     return data
 
-def find_label(xy, label_map):
-    asd = 0
+def visualize(image, filtered_xy, point_labels, label_color_map):   
+    
+    filtered_xy = filtered_xy.astype(int)
+
+    for i in range(len(filtered_xy[0])):
+        image[filtered_xy[0,i], filtered_xy[1,i],:] = label_color_map[point_labels[filtered_xy[2,i],0]]
+
+    return np.asarray(image).astype(np.uint8)
+
+def filter_indices_xy(xy, image_size):
+
+    x = xy[1,:]
+    y = xy[0,:]
+    indices = xy[2,:]
+
+    inside_frame_x = np.logical_and((x > 0), (x < image_size[0]))
+    inside_frame_y = np.logical_and((y > 0), (y < image_size[1]))
+    inside_frame_indices = np.argwhere(np.logical_and(inside_frame_x,inside_frame_y)).flatten()
+
+    filtered_xy = np.stack((x[inside_frame_indices],y[inside_frame_indices],indices[inside_frame_indices]))
+    
+    return filtered_xy 
 
 # [x;y;1] = K*[R|t] * [X;Y;Z;1] = cam_mat_P * velo_mat_T * [X;Y;Z;1]
 def projection(points, extrinsic, intrinsic):
@@ -33,7 +53,9 @@ def projection(points, extrinsic, intrinsic):
     xy = np.matmul(projection_matrix,XYZ)
     xy = xy / xy[2,None]
 
-    return xy[0:1,:]
+    xy[2,:] = front_hemisphere_indices
+
+    return xy
 
 
 if __name__ =="__main__":
@@ -44,11 +66,16 @@ if __name__ =="__main__":
     velo_point_cloud    = data['velodyne']
     cam_mat_K           = data['K_cam2']  
     velo_mat_T          = data['T_cam2_velo']   # extrinsic camera parameters
-    cam_mat_P           = data['P_rect_30']     # intrinsic camera parameters
+    cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
     cam_image           = data['image_2']
     labels              = data['labels']
-    labels_color_map    = data['color_map']
+    label_color_map     = data['color_map']
+    point_labels        = data['sem_label']
     objects             = data['objects']
 
+
     xy = projection(velo_point_cloud,velo_mat_T,cam_mat_P)
-    asd = 10
+    filtered_xy = filter_indices_xy(xy, cam_image.shape)
+    new_image = visulize(cam_image, filtered_xy, point_labels, label_color_map)
+    im = Image.fromarray(new_image)
+    im.show()
