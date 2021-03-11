@@ -16,68 +16,71 @@ def get_data():
     data = load_data(data_path)
     return data
 
-def visualize_3D_box(image, filtered_xy):
+def visualize_3D_box(image, xy):
+    """ Visualize 3D box by using edge points xy on image.
 
-    filtered_xy = filtered_xy.astype(int)
+    Args:
+        image:  Type does not matter (numpy, list ...)
+                3D matrix of an RGB image
+        xy:     2x(8*NumberOfPoints) (numpy, list ...) 
+                First row : x in image coordinates
+                Second row: y in image coordinates
+                There are 8*NumberOfObjects columns. Every consecutive group of 8
+                defines a bounding box for an object. 
+    """ 
+    xy = xy.astype(int)
+    g = (0,255,0)
+    p1 = (0,0,0,3,3,3,5,5,5,6,6,6)
+    p2 = (1,2,4,1,2,7,1,4,7,7,2,4)
 
-    for i in range(int(len(filtered_xy[0])/8)):
+    for i in range(int(len(xy[0])/8)):
+        edges = list()
+        for j in range(8):
+            edges.append( (xy[0, 8*i+j], xy[1, 8*i+j]) )
+        
+        for j in range(len(p1)):
+            image = cv2.line(image, edges[p1[j]], edges[p2[j]], g, 1)
 
-        point0 = (filtered_xy[0, 8*i], filtered_xy[1, 8*i])
-        point1 = (filtered_xy[0, 8*i+1], filtered_xy[1, 8*i+1])
-        point2 = (filtered_xy[0, 8*i+2], filtered_xy[1, 8*i+2])
-        point3 = (filtered_xy[0, 8*i+3], filtered_xy[1, 8*i+3])
-        point4 = (filtered_xy[0, 8*i+4], filtered_xy[1, 8*i+4])
-        point5 = (filtered_xy[0, 8*i+5], filtered_xy[1, 8*i+5])
-        point6 = (filtered_xy[0, 8*i+6], filtered_xy[1, 8*i+6])
-        point7 = (filtered_xy[0, 8*i+7], filtered_xy[1, 8*i+7])
-
-        image = cv2.rectangle(image,point0,point3,(0,255,0),1)
-        image = cv2.rectangle(image,point5,point6,(0,255,0),1)
-        image = cv2.line(image, point1, point5, (0,255,0),1)
-        image = cv2.line(image, point3, point7, (0,255,0),1)
-        image = cv2.line(image, point0, point4, (0,255,0),1)
-        image = cv2.line(image, point2, point6, (0,255,0),1)
-    """
-    i= 0 
-    point0 = (filtered_xy[0, 8*i], filtered_xy[1, 8*i])
-    point1 = (filtered_xy[0, 8*i+1], filtered_xy[1, 8*i+1])
-    point2 = (filtered_xy[0, 8*i+2], filtered_xy[1, 8*i+2])
-    point3 = (filtered_xy[0, 8*i+3], filtered_xy[1, 8*i+3])
-    point4 = (filtered_xy[0, 8*i+4], filtered_xy[1, 8*i+4])
-    point5 = (filtered_xy[0, 8*i+5], filtered_xy[1, 8*i+5])
-    point6 = (filtered_xy[0, 8*i+6], filtered_xy[1, 8*i+6])
-    point7 = (filtered_xy[0, 8*i+7], filtered_xy[1, 8*i+7])
-
-    image = cv2.rectangle(image,point0,point3,(0,255,0),1)
-    image = cv2.rectangle(image,point5,point6,(0,255,0),1)
-    image = cv2.line(image, point1, point5, (0,255,0),1)
-    image = cv2.line(image, point3, point7, (0,255,0),1)
-    image = cv2.line(image, point0, point4, (0,255,0),1)
-    image = cv2.line(image, point2, point6, (0,255,0),1) 
-    
-    # image = cv2.circle(image, point4, 3, (255, 0, 0), -1)
-    # image = cv2.circle(image, point5, 3, (0, 0, 0), -1)
-    # image = cv2.circle(image, point6, 3, (255, 255, 0), -1)
-    # image = cv2.circle(image, point7, 3, (0, 255, 0), -1)
-    #image = cv2.circle(image, point5, 3, (0, 0, 255), -1)
-    #image = cv2.circle(image, point6, 3, (255, 255, 255), -1)
-    """
-    
     return image
-
-
-def visualize(image, filtered_xy, point_labels, label_color_map):   
     
-    filtered_xy = filtered_xy.astype(int)
 
-    for i in range(len(filtered_xy[0])):
-        color = label_color_map[point_labels[filtered_xy[2,i],0]]
-        image[filtered_xy[0,i], filtered_xy[1,i],:] = [color[2], color[1],color[0]]
+def visualize(image, xy, labels, color_map):
+    """ Visualize 2D points on image according to their labels and color map.
+
+    Args:
+        image:      Type does not matter (numpy, list ...)
+                    3D matrix of an RGB image
+        xy:         3xNumberOfPoints (float) (numpy, list)
+                    First row : x in image coordinates and for sure in frame 
+                    Second row: y in image coordinates and for sure in frame
+                    Third row : index of the point in the original original data source
+        labels:     (numpy.array)
+                    object that gives the semantic label of each point within the scene.  
+
+        color_map:  dictionary
+                    maps numeric semantic labels to a BGR color for visualization   
+    """       
+    xy = xy.astype(int)
+    for i in range(len(xy[0])):
+        color = color_map[labels[xy[2,i],0]]
+        image = cv2.circle(image, (xy[1,i], xy[0,i]), radius=0, color=color, thickness=-1)
+        #image[xy[0,i], xy[1,i],:] = [color[2], color[1],color[0]]
 
     return np.asarray(image).astype(np.uint8)
 
 
 def filter_indices_xy(xy, image_size):
+    """ Filter the points if they are not projected inside the frame of the image.
+
+    Args:
+        xy:         3xNumberOfPoints (float) (numpy, list)
+                    First row : x in image coordinates 
+                    Second row: y in image coordinates 
+                    Third row : index of the point in the original original data source
+        image_size: (tuple of two int)
+                    Size of the image in pixel 
+                    First element x; Second element y  
+    """      
 
     x = xy[1,:]
     y = xy[0,:]
@@ -91,10 +94,22 @@ def filter_indices_xy(xy, image_size):
     
     return filtered_xy 
 
-# [x;y;1] = K*[R|t] * [X;Y;Z;1] = cam_mat_P * velo_mat_T * [X;Y;Z;1]
-def projection_3D_2D(points, extrinsic, intrinsic,should_in_frame = True):
 
+def projection_3D_2D(points, extrinsic, intrinsic):
+    """ Projection of 3D points to 2D image
+    [x;y;1] = K*[R|t] * [X;Y;Z;1] = cam_mat_P * velo_mat_T * [X;Y;Z;1]
 
+    Args:
+        points:     (num points x 4) numpy.array object.
+                    First column : x 
+                    Second column: y 
+                    Third column : z
+                    Forth column : reflection
+        extrinsic:  4x4 (numpy.array)
+                    The homogeneous velodyne to rectified camera coordinate transformations
+        instrinsic: 3x4 (numpy.array)
+                    The intrinsic projection matrices to Cam X after rectification
+    """   
     front_hemisphere = points[:, 0] > 0 
     front_hemisphere_indices = np.argwhere(front_hemisphere).flatten()
 
@@ -114,13 +129,23 @@ def projection_3D_2D(points, extrinsic, intrinsic,should_in_frame = True):
 
     return xy
 
+
 def object_box_points(objects):
+    """ Calculates edges of the 3D boxes for given object location and dimensions
+
+    Args:
+        xy: contains a list of lists with 16 elements for each object
+
+    """   
 
     number_of_objects = len(objects)
     box_edges = np.ones((4, 8*number_of_objects))
 
     obj_edges = np.ones((3, 8))
     
+    # This order is important. This order is used in visualization part 
+    # to decide which points have edge between them.
+
     x1 = [0,1,2,3]
     x2 = [4,5,6,7]
     z1 = [0,2,4,6]
@@ -135,11 +160,10 @@ def object_box_points(objects):
         object_center   = [objects[i][11], objects[i][12], objects[i][13]]
         
         Ry = np.array([[np.cos(ty), 0, np.sin(ty)], [0, 1, 0], [-np.sin(ty), 0, np.cos(ty)]])
-        # Ry = Ry.reshape([3,3])
 
-
-        obj_edges[0,x1] = - object_dim[2]/2 # x
-        obj_edges[0,x2] = object_dim[2]/2 # x
+        # Define edges as if the object is at the origin
+        obj_edges[0,x1] = - object_dim[2]/2 
+        obj_edges[0,x2] = object_dim[2]/2 
 
         obj_edges[1,y1] = 0
         obj_edges[1,y2] = - object_dim[0]
@@ -147,16 +171,14 @@ def object_box_points(objects):
         obj_edges[2,z1] = object_dim[1]/2
         obj_edges[2,z2] = - object_dim[1]/2
 
+        # Rotate the edges
         obj_edges = np.dot(Ry, obj_edges)
         
-        obj_edges[0,x1] += object_center[0] 
-        obj_edges[0,x2] += object_center[0] 
+        # Shift the center of the object true position
+        obj_edges[0,:] += object_center[0]
+        obj_edges[1,:] += object_center[1]
+        obj_edges[2,:] += object_center[2]   
 
-        obj_edges[1,y1] += object_center[1] 
-        obj_edges[1,y2] += object_center[1]
-
-        obj_edges[2,z1] += object_center[2] 
-        obj_edges[2,z2] += object_center[2] 
         box_edges[0:3, 8*i : 8*i+8 ] = obj_edges
 
     return box_edges
@@ -167,8 +189,7 @@ if __name__ =="__main__":
 
     data = get_data()
 
-    velo_point_cloud    = data['velodyne']
-    cam_mat_K           = data['K_cam2']  
+    velo_point_cloud    = data['velodyne'] 
     velo_mat_T          = data['T_cam2_velo']   # extrinsic camera parameters
     cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
     cam_image           = data['image_2']
@@ -185,7 +206,6 @@ if __name__ =="__main__":
     object_box_points_3D = object_box_points(objects)
     object_box_points_2D = np.matmul(cam_mat_P,object_box_points_3D)
     object_box_points_2D = object_box_points_2D / object_box_points_2D[2,None]
-    # object_box_points_2D = projection_3D_2D(object_box_points_3D, None,cam_mat_P, False)
     image_with_3D_box    = visualize_3D_box(new_image,object_box_points_2D)
 
   
