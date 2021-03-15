@@ -146,7 +146,7 @@ def object_box_points(objects,velo_cam0_mat_T):
     return box_edges
 
 if __name__ == '__main__':
-    data = load_data('data/demo.p') # Change to data.p for your final submission 
+    data = load_data('data/data.p') # Change to data.p for your final submission 
     
     velo_point_cloud    = data['velodyne']
     cam_mat_K           = data['K_cam2']  

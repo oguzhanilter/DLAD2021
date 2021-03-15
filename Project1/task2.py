@@ -31,8 +31,18 @@ def visualize_3D_box(image, filtered_xy):
         point6 = (filtered_xy[0, 8*i+6], filtered_xy[1, 8*i+6])
         point7 = (filtered_xy[0, 8*i+7], filtered_xy[1, 8*i+7])
 
-        image = cv2.rectangle(image,point0,point3,(0,255,0),1)
-        image = cv2.rectangle(image,point5,point6,(0,255,0),1)
+        #image = cv2.rectangle(image,point0,point3,(0,255,0),1)
+        #image = cv2.rectangle(image,point5,point6,(0,255,0),1)
+        image = cv2.line(image, point0, point1, (0,255,0),1)
+        image = cv2.line(image, point1, point3, (0,255,0),1)
+        image = cv2.line(image, point3, point2, (0,255,0),1)
+        image = cv2.line(image, point2, point0, (0,255,0),1)
+
+        image = cv2.line(image, point4, point5, (0,255,0),1)
+        image = cv2.line(image, point5, point7, (0,255,0),1)
+        image = cv2.line(image, point7, point6, (0,255,0),1)
+        image = cv2.line(image, point6, point4, (0,255,0),1)
+
         image = cv2.line(image, point1, point5, (0,255,0),1)
         image = cv2.line(image, point3, point7, (0,255,0),1)
         image = cv2.line(image, point0, point4, (0,255,0),1)
