@@ -171,6 +171,7 @@ if __name__ =="__main__":
     cam_mat_K           = data['K_cam2']  
     velo_mat_T          = data['T_cam2_velo']   # extrinsic camera parameters
     cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
+    velo_mat_T          = data['T_cam2_velo']
     cam_image           = data['image_2']
     labels              = data['labels']
     label_color_map     = data['color_map']
