@@ -49,7 +49,7 @@ class Visualizer():
            /|         /|
           2 -------- 3 .
           | |        | |
-          . 5 -------- 4
+          . 5 -------- 4 
           |/         |/
           6 -------- 7
         If you plan to use a different order, you can
