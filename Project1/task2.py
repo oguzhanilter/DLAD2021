@@ -190,7 +190,7 @@ if __name__ =="__main__":
     data = get_data()
 
     velo_point_cloud    = data['velodyne'] 
-    velo_mat_T          = data['T_cam2_velo']   # extrinsic camera parameters
+    velo_mat_T          = data['T_cam0_velo']   # extrinsic camera parameters
     cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
     cam_image           = data['image_2']
     labels              = data['labels']
