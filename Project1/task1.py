@@ -27,9 +27,10 @@ def scale_to_255(a, min, max, dtype=np.uint8):
 def birds_eye_point_cloud(points,
                           side_range=(-120, 120),
                           fwd_range=(-120,120),
+                          h_range=(-100,100),
                           res=0.2,
-                          min_height = -1.73,
-                          max_height = 4.19,
+                          r_min = 0,
+                          r_max = 1,
                           saveto=None):
     """ Creates an 2D birds eye view representation of the point cloud data.
         You can optionally save the image to specified filename.
@@ -44,19 +45,16 @@ def birds_eye_point_cloud(points,
         fwd_range:  (tuple of two floats)
                     (-behind, front) in metres
                     back and front limits of rectangle to look at.
+        h_range:    (tuple of two floats)
+                    (min_height,max_height) in metres
+                    Used to truncate height values outside this range
         res:        (float) desired resolution in metres to use
                     Each output pixel will represent an square region res x res
                     in size.
-        min_height:  (float)(default=-2.73)
-                    Used to truncate height values to this minumum height
-                    relative to the sensor (in metres).
-                    The default is set to -2.73, which is 1 metre below a flat
-                    road surface given the configuration in the kitti dataset.
-        max_height: (float)(default=1.27)
-                    Used to truncate height values to this maximum height
-                    relative to the sensor (in metres).
-                    The default is set to 1.27, which is 3m above a flat road
-                    surface given the configuration in the kitti dataset.
+        r_min:      (float)
+                    minimum reflectance value
+        r_max:      (float)
+                    maximum reflectance value
         saveto:     (str or None)(default=None)
                     Filename to save the image as.
                     If None, then it just displays the image.
@@ -70,7 +68,9 @@ def birds_eye_point_cloud(points,
     # Note left side is positive y axis in LIDAR coordinates
     ff = np.logical_and((x_lidar > fwd_range[0]), (x_lidar < fwd_range[1]))
     ss = np.logical_and((y_lidar > -side_range[1]), (y_lidar < -side_range[0]))
-    indices = np.argwhere(np.logical_and(ff,ss)).flatten()
+    zz = np.logical_and((z_lidar > h_range[0]), (y_lidar < h_range[1]))
+    indices = np.argwhere(np.logical_and(ff,ss,zz)).flatten()
+    
 
     # CONVERT TO PIXEL POSITION VALUES - Based on resolution
     x_img = (-y_lidar[indices]/res).astype(np.int32) # x axis is -y in LIDAR
@@ -82,29 +82,34 @@ def birds_eye_point_cloud(points,
     x_img -= int(np.floor(side_range[0]/res))
     y_img -= int(np.floor(fwd_range[0]/res))
 
-    # CLIP HEIGHT VALUES - to between min and max heights
-    pixel_values = np.clip(a = z_lidar[indices],
-                           a_min=min_height,
-                           a_max=max_height)
+    # set pixel values for each of the choosen indices to the reflectance value
+    #pixel_values = np.clip(a = r_lidar[indices],
+    #                       a_min=min_height,
+    #                       a_max=max_height)
+    pixel_values = r_lidar[indices]
 
-    # RESCALE THE HEIGHT VALUES - to be between the range 0-255
-    pixel_values  = scale_to_255(pixel_values, min=min_height, max=max_height)
+    # RESCALE THE REFLECTANCE VALUES - to be between the range 0-255
+    pixel_values  = scale_to_255(pixel_values, min=r_min, max=r_max)
 
     # FILL PIXEL VALUES IN IMAGE ARRAY
+
+    #create image array
     x_max = int((side_range[1] - side_range[0])/res)
     y_max = int((fwd_range[1] - fwd_range[0])/res)
     im = np.zeros([y_max, x_max], dtype=np.uint8)
 
-    # If multiple points lie within the same bin, the highest intensity point should be sampled.
-    sorted_inds = r_lidar.argsort()
+    # If multiple points lie within the same bin, the highest intensity point should be sampled
+    # by sorting the reflectance values in ascending order, when filling the image array, the points
+    # with highest reflectance for one bin will overwrite an eventual point in the same bin with lower
+    # reflectance
+    sorted_inds = pixel_values.argsort()
     x_img = x_img[sorted_inds]
     y_img = y_img[sorted_inds]
     pixel_values = pixel_values[sorted_inds]
 
+    # fill image array with the filtered and sorted point reflectance data
     # -y because images start from top left
     im[-y_img, x_img] = pixel_values 
-
-    # Add an arrow to indicate the direction of the ego-vehicle
 
     # Convert from numpy array to a PIL image
     im = Image.fromarray(im)
@@ -117,18 +122,15 @@ def birds_eye_point_cloud(points,
 
 
 
-
 if __name__ =="__main__":
     print("**** Running task1 ****")
 
     data = get_data()
     
     birds_eye_point_cloud(data['velodyne'],
-                          side_range=(-100, 100),
-                          fwd_range=(-100,100),
+                          side_range=(-60, 60),
+                          fwd_range=(-60,60),
                           res=0.2,
-                          min_height = -1.73,
-                          max_height = 0,
                           saveto=None)
 
     
