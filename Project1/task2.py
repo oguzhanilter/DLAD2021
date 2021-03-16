@@ -181,6 +181,7 @@ if __name__ =="__main__":
     cam_mat_K           = data['K_cam2']  
     velo_mat_T          = data['T_cam2_velo']   # extrinsic camera parameters
     cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
+    cam0_mat_P           = data['P_rect_00']
     velo_mat_T          = data['T_cam2_velo']
     cam_image           = data['image_2']
     labels              = data['labels']
@@ -194,7 +195,7 @@ if __name__ =="__main__":
     new_image   = visualize(cam_image, filtered_xy, point_labels, label_color_map)
 
     object_box_points_3D = object_box_points(objects)
-    object_box_points_2D = np.matmul(cam_mat_P,object_box_points_3D)
+    object_box_points_2D = np.matmul(cam0_mat_P,object_box_points_3D)
     object_box_points_2D = object_box_points_2D / object_box_points_2D[2,None]
     # object_box_points_2D = projection_3D_2D(object_box_points_3D, None,cam_mat_P, False)
     image_with_3D_box    = visualize_3D_box(new_image,object_box_points_2D)
