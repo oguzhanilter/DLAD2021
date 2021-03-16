@@ -6,7 +6,7 @@ from PIL import Image
 from load_data import load_data
 
 RELATIVE_PATH_TO_DATA = 'data'
-DATA_FILE_NAME = 'data.p'
+DATA_FILE_NAME = 'demo.p'
 Q1 = False
 Q2 = True
 
@@ -62,7 +62,7 @@ def visualize(image, xy, labels, color_map):
     """       
     xy = xy.astype(int)
     for i in range(len(xy[0])):
-        color = color_map[labels[xy[2,i],0]]
+        color = color_map[labels[xy[2,i],0]][::-1]
         image = cv2.circle(image, (xy[1,i], xy[0,i]), radius=1, color=color, thickness=-1)
         #image[xy[0,i], xy[1,i],:] = [color[2], color[1],color[0]]
 
