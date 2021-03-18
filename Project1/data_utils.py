@@ -1,6 +1,7 @@
 # Deep Learning for Autonomous Driving
-# Material for the 3rd and 4th Problems of Project 1
-# For further questions contact Dengxin Dai, dai@vision.ee.ethz.ch
+# Material for the 3rd and 4th problem of Project 1
+# For further questions contact Dengxin Dai (dai@vision.ee.ethz.ch) or Ozan Unal (ouenal@ee.ethz.ch)
+
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
