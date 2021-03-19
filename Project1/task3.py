@@ -4,6 +4,8 @@ import data_utils
 import numpy as np
 from PIL import Image
 from load_data import load_data
+import data_utils as du
+
 
 RELATIVE_PATH_TO_DATA = 'data'
 DATA_FILE_NAME = 'demo.p'
@@ -27,6 +29,8 @@ def visualize(image, xy, color_map):
                     First row : x in image coordinates and for sure in frame 
                     Second row: y in image coordinates and for sure in frame
                     Third row : index of the point in the original original data source
+                    Forth row : vertical angles on the LIDAR frame
+                    Fifth row : horizontal angles on the LIDAR frame  
         color_map:  dictionary
                     maps numeric semantic labels to a BGR color for visualization   
     """
@@ -38,7 +42,7 @@ def visualize(image, xy, color_map):
     """
     angles_vert = xy[4,:]*57.295779513
     a = 0
-    min_l = -24.9 - a 
+    min_l = -24.9 - a
     max_l = 2 + a
 
 
@@ -63,7 +67,12 @@ def visualize(image, xy, color_map):
         else:
             group       = np.logical_and( ( angles_vert>=bin_edges[i] ) , ( angles_vert<=bin_edges[i+1] ) )
 
-        color = color_map[i%4]
+        #color = color_map[i%4]
+        hue = du.line_color(np.array([[i]]))
+        c = np.uint8([[[hue,255,255 ]]])   
+        cHSV = cv2.cvtColor(c, cv2.COLOR_HSV2RGB)
+        color = cHSV[0,0].tolist()
+
         group_inds  = np.argwhere(group).flatten()
 
         for j in range(len(group_inds)):
@@ -112,7 +121,8 @@ def filter_indices_xy(xy, image_size):
                     First row : x in image coordinates 
                     Second row: y in image coordinates 
                     Third row : index of the point in the original original data source
-                    Forth row : angles on the LIDAR frame   
+                    Forth row : vertical angles on the LIDAR frame
+                    Fifth row : horizontal angles on the LIDAR frame  
     """      
 
     x = xy[1,:]
@@ -150,7 +160,8 @@ def projection_3D_2D(points, extrinsic, intrinsic):
                     First row : x 
                     Second row: y 
                     Third row : indices of original dataset
-                    Forth row : angles on the LIDAR frame     
+                    Forth row : vertical angles on the LIDAR frame
+                    Fifth row : horizontal angles on the LIDAR frame     
 
     """   
     front_hemisphere = points[:, 0] > 0 
@@ -159,10 +170,10 @@ def projection_3D_2D(points, extrinsic, intrinsic):
     front_hemisphere_x = points[front_hemisphere_indices, 0]
     front_hemisphere_y = points[front_hemisphere_indices, 1]
     front_hemisphere_z = points[front_hemisphere_indices, 2]
-    angles_vertical = np.arctan2(front_hemisphere_y,front_hemisphere_x)
+    angles_horizontal = np.arctan2(front_hemisphere_y,front_hemisphere_x)
 
     a = np.sqrt(np.square(front_hemisphere_x )+ np.square(front_hemisphere_y))
-    angles_horizontal = np.arctan2(front_hemisphere_z,a)
+    angles_vertical = np.arctan2(front_hemisphere_z,a)
     homo_coor = np.ones(len(front_hemisphere_x))
 
     XYZ = np.stack((front_hemisphere_x,front_hemisphere_y,front_hemisphere_z,homo_coor))
@@ -173,9 +184,8 @@ def projection_3D_2D(points, extrinsic, intrinsic):
     xy = xy / xy[2,None]
 
     xy[2,:] = front_hemisphere_indices
-    xy = np.vstack((xy, angles_vertical)) 
     xy = np.vstack((xy, angles_horizontal)) 
-    a=9
+    xy = np.vstack((xy, angles_vertical)) 
     return xy
 
 if __name__ =="__main__":
@@ -196,8 +206,5 @@ if __name__ =="__main__":
 
     im = Image.fromarray(new_image)
     im.show()
-
-
-    a  = 10 
 
    
