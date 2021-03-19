@@ -1,11 +1,12 @@
 import os
+import cv2
 import data_utils
 import numpy as np
 from PIL import Image
 from load_data import load_data
 
 relative_path_to_data = 'data'
-data_file_name = 'data.p'
+data_file_name = 'demo.p'
 
 def get_data():
     script_path = os.path.dirname(os.path.realpath(__file__))
@@ -30,8 +31,7 @@ def birds_eye_point_cloud(points,
                           h_range=(-100,100),
                           res=0.2,
                           r_min = 0,
-                          r_max = 1,
-                          saveto=None):
+                          r_max = 1):
     """ Creates an 2D birds eye view representation of the point cloud data.
         You can optionally save the image to specified filename.
 
@@ -55,26 +55,23 @@ def birds_eye_point_cloud(points,
                     minimum reflectance value
         r_max:      (float)
                     maximum reflectance value
-        saveto:     (str or None)(default=None)
-                    Filename to save the image as.
-                    If None, then it just displays the image.
     """
-    x_lidar = points[:, 0]
-    y_lidar = points[:, 1]
-    z_lidar = points[:, 2]
+    x = points[:, 0]
+    y = points[:, 1]
+    z = points[:, 2]
     r_lidar = points[:, 3]  # Reflectance
 
     # INDICES FILTER - of values within the desired rectangle
     # Note left side is positive y axis in LIDAR coordinates
-    ff = np.logical_and((x_lidar > fwd_range[0]), (x_lidar < fwd_range[1]))
-    ss = np.logical_and((y_lidar > -side_range[1]), (y_lidar < -side_range[0]))
-    zz = np.logical_and((z_lidar > h_range[0]), (y_lidar < h_range[1]))
+    ff = np.logical_and((x > fwd_range[0]), (x < fwd_range[1]))
+    ss = np.logical_and((y > -side_range[1]), (y < -side_range[0]))
+    zz = np.logical_and((z > h_range[0]), (y < h_range[1]))
     indices = np.argwhere(np.logical_and(ff,ss,zz)).flatten()
     
 
     # CONVERT TO PIXEL POSITION VALUES - Based on resolution
-    x_img = (-y_lidar[indices]/res).astype(np.int32) # x axis is -y in LIDAR
-    y_img = (x_lidar[indices]/res).astype(np.int32)  # y axis is -x in LIDAR
+    x_img = (-y[indices]/res).astype(np.int32) # x axis is -y in LIDAR
+    y_img = (x[indices]/res).astype(np.int32)  # y axis is -x in LIDAR
                                                      # will be inverted later
 
     # SHIFT PIXELS TO HAVE MINIMUM BE (0,0)
@@ -111,14 +108,15 @@ def birds_eye_point_cloud(points,
     # -y because images start from top left
     im[-y_img, x_img] = pixel_values 
 
+    # put an arrow to indicate the car direction
+    start_point = (int(side_range[1]/res), int(fwd_range[1]/res) + int(y_max/75))
+    end_point   = (int(side_range[1]/res), int(fwd_range[1]/res) - int(y_max/75))
+    im = cv2.arrowedLine(im, start_point, end_point, 255 , 1) 
+
     # Convert from numpy array to a PIL image
     im = Image.fromarray(im)
 
-    # SAVE THE IMAGE
-    if saveto is not None:
-        im.save(saveto)
-    else:
-        im.show()
+    im.show()
 
 
 
@@ -128,9 +126,8 @@ if __name__ =="__main__":
     data = get_data()
     
     birds_eye_point_cloud(data['velodyne'],
-                          side_range=(-60, 60),
+                          side_range=(-50, 50),
                           fwd_range=(-60,60),
-                          res=0.2,
-                          saveto=None)
+                          res=0.2)
 
     
