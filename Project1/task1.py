@@ -6,7 +6,7 @@ from PIL import Image
 from load_data import load_data
 
 relative_path_to_data = 'data'
-data_file_name = 'demo.p'
+data_file_name = 'data.p'
 
 def get_data():
     script_path = os.path.dirname(os.path.realpath(__file__))
