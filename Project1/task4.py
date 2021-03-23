@@ -117,7 +117,7 @@ def filter_indices_xy(xy, image_size):
     return filtered_xy
 
 
-def corrected_projection_3D_2D(points, extrinsic, intrinsic,lidar_ts,lidar_te,lidar_t,imu_rot,imu_vel):
+def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intrinsic,lidar_ts,lidar_te,lidar_t,imu_rot,imu_vel):
     """ 
         DISCLAIMER: parameter passing is still not documented!
 
@@ -156,6 +156,7 @@ def corrected_projection_3D_2D(points, extrinsic, intrinsic,lidar_ts,lidar_te,li
     homo_coor = np.ones(len(front_hemisphere_x))
 
     XYZ = np.stack((front_hemisphere_x,front_hemisphere_y,front_hemisphere_z,homo_coor))
+    XYZ = np.matmul(RT_velo2IMU, XYZ)
         
     projection_matrix = np.matmul(intrinsic,extrinsic) 
     
@@ -174,10 +175,12 @@ def corrected_projection_3D_2D(points, extrinsic, intrinsic,lidar_ts,lidar_te,li
         dt =   interp*lidar_ts + (1-interp)*lidar_te - lidar_t
         
         R = Rot.from_euler('z',imu_rot[2]*dt, degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
-        T = imu_vel*dt 
+        T = imu_vel*dt*np.sign(h_angle) 
 
         RT = create_homo_trans(R,T)
         XYZ[:,i] = np.matmul(RT,XYZ[:,i])
+    
+    XYZ = np.matmul(RT_IMU2velo, XYZ)
         
     xy = np.matmul(projection_matrix,XYZ)
     
@@ -264,7 +267,7 @@ def visualize_task4(cam_image, xy,velo_point_cloud):
     y =  velo_point_cloud[xy[2,:].astype(np.uint32)][:,1]
     z =  velo_point_cloud[xy[2,:].astype(np.uint32)][:,2]
     depth = x #np.sqrt(np.square(x)+np.square(y)+np.square(z))
-    hue = depth_color(depth,0,30)
+    hue = depth_color(depth,0,60)
     
     xy = xy.astype(int)
     for i in range(len(xy[0])):
@@ -358,7 +361,8 @@ def get_lidar_orientations(lidar_ts,lidar_te,lidar_t):
     lidar_period = lidar_te-lidar_ts #period that lidar used to complete full rotation
     lidar_rot = math.pi*2/lidar_period
     lidar_start_yaw = lidar_rot*(lidar_t-lidar_ts)
-    lidar_end_yaw = lidar_start_yaw - math.pi*2 #giust start + 360° in clockwise direction
+    # lidar_end_yaw = lidar_start_yaw - math.pi*2 #giust start + 360° in clockwise direction
+    lidar_end_yaw = lidar_start_yaw + (lidar_ts-lidar_te)*lidar_rot
 
     return lidar_start_yaw, lidar_end_yaw
 
@@ -379,7 +383,7 @@ if __name__ =="__main__":
     # LOAD DATA FOR specific frame
 
     #interesting debugging frame = 2
-    frame = 37
+    frame = 312 # 37
     frame_interp = [-1,0,1] #list of frame offsets used for imu data interpolation -1 = previus, 0 = current, 1=next etc
 
     frame_name = get_frame_name(frame)
@@ -400,7 +404,7 @@ if __name__ =="__main__":
     #READ IMAGE
     image = cv2.imread(IMAGE_FILE_PATH + '/'+frame_name+ '.png')
 
-    #READ IMU DATA
+    #READ IMU DATA   ---- bypass 
 
     #data points for imu vel and angular vel to do interpolation (for previous, current and next frame)
     imu_vel_interp = [load_oxts_velocity(OXTS_FILE_PATH+'/'+get_frame_name(frame+i)+'.txt') for i in frame_interp]
@@ -418,7 +422,12 @@ if __name__ =="__main__":
     imu_vel = imu_vel_f(lidar_t)
     imu_rot = imu_rot_f(lidar_t)
 
+    # ------ bypass ends    
 
+
+    imu_vel = load_oxts_velocity(OXTS_FILE_PATH+'/'+get_frame_name(frame)+'.txt')
+    imu_rot = load_oxts_angular_rate(OXTS_FILE_PATH+'/'+get_frame_name(frame)+'.txt')
+    
     #READ POINT CLOUD
     velo_point_cloud = load_from_bin(script_path+LIDAR_PATH+'/data/' +frame_name+'.bin')
 
@@ -429,14 +438,16 @@ if __name__ =="__main__":
 
     #create tranformation velo to cam in homogeneous coorindates
     RT_velo2cam = create_homo_trans(R_velo2cam,T_velo2cam)
+    RT_IMU2velo = create_homo_trans(R_imu2velo,T_imu2velo)
+    RT_velo2IMU = create_homo_trans(R_imu2velo.transpose(), -T_imu2velo)
 
 
     #PROJECT lidar point cloud data into image plane
 
     #switch between corrected and original
     if REMOVE_DISTORTION:
-        xy          = corrected_projection_3D_2D(velo_point_cloud,RT_velo2cam,P_cam2cam,
-                                                lidar_ts,lidar_te,lidar_t,imu_rot,imu_vel)
+        xy          = corrected_projection_3D_2D(velo_point_cloud,RT_velo2cam,RT_velo2IMU, RT_IMU2velo, 
+                                                 P_cam2cam, lidar_ts,lidar_te,lidar_t,imu_rot,imu_vel)
     else:
         xy          = projection_3D_2D(velo_point_cloud,RT_velo2cam,P_cam2cam)
     
