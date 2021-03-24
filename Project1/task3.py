@@ -7,20 +7,17 @@ from load_data import load_data
 
 RELATIVE_PATH_TO_DATA = 'data'
 DATA_FILE_NAME = 'demo.p'
-Q1 = False
-Q2 = True
+
+ID_MODE = 2 # 0 for histogram , 1 for prob, 2 for rotation, 3 for rot and prob
+ROT_ANGLE = -1
+
+
 
 def get_data():
     script_path = os.path.dirname(os.path.realpath(__file__))
     data_path = os.path.join(script_path, RELATIVE_PATH_TO_DATA,DATA_FILE_NAME)
     data = load_data(data_path)
     return data
-
-
-#Creating a Function.
-def normal_dist(x , mean , sd):
-    prob = (np.sqrt(2*np.pi)*sd) * np.exp(-0.5*((x-mean)/sd)**2)
-    return prob
 
 def visualize(image, xy, labels, color_map):
     """ Visualize 2D points on image according to their labels and color map.
@@ -49,10 +46,10 @@ def visualize(image, xy, labels, color_map):
     return np.asarray(image).astype(np.uint8)
 
 def identification_angle_3D(angles, number_of_group):
-    """ Gives every angle an ID. 
+    """ Gives every angle an ID using histogram 
 
     Args:
-        xy:         2xNumberOfPoints (float) (numpy, list)
+        angles:     2xNumberOfPoints (float) (numpy, list)
                     First row : horizontal angles
                     Second row: vertical angles
 
@@ -76,8 +73,31 @@ def identification_angle_3D(angles, number_of_group):
     return IDs
 
 
+def normal_dist(x , mean , sdt):
+    prob_density = (np.sqrt(2*np.pi)*sdt) * np.exp(-0.5*((x-mean)/sdt)**2)
+    return prob_density
 
+def identification_prob_3D(angles, mean, std):
+    """ Gives every angle an ID using the normal distribution 
 
+    Args:
+        angles:     2xNumberOfPoints (float) (numpy, list)
+                    First row : horizontal angles
+                    Second row: vertical angles
+
+        number_of_ID: (int)
+                      Number of groups in points 
+    """  
+
+    IDs = np.zeros(len(angles[0,:]))
+
+    for i in range(len(angles[0,:])):
+        prob = [normal_dist(angles[1,i],m,std ) for m in mean]
+        IDs[i] = np.argmax(prob)
+
+    return IDs
+
+    
 def filter_indices_xy(xy, image_size):
     """ Filter the points if they are not projected inside the frame of the image.
 
@@ -117,8 +137,8 @@ def angles_3D(points):
     y = points[:, 1]
     z = points[:, 2]
 
-    angles_horizontal = np.arctan2(y,x)*57.295779513
-    angles_vertical = np.arctan2(z, np.sqrt(np.square( x )+ np.square( y ) ) )*57.295779513
+    angles_horizontal = np.degrees(np.arctan2(y,x))
+    angles_vertical = np.degrees(np.arctan2(z, np.sqrt(np.square( x )+ np.square( y ) ) ))
 
     angles = np.vstack((angles_horizontal, angles_vertical))
     return angles 
@@ -168,8 +188,32 @@ if __name__ =="__main__":
 
     label_color_map = [[255,0,0], [0,255,0], [0,0,255,], [0,255,255]]
 
-    angles      = angles_3D(velo_point_cloud)
-    IDs         = identification_angle_3D(angles, 64) 
+    if(ID_MODE == 1):
+        angles      = angles_3D(velo_point_cloud)
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 64)
+        std         = np.abs(mean[0]-mean[1])/5
+        IDs         = identification_prob_3D(angles,mean,std )
+
+    elif(ID_MODE == 2):
+        tx = np.radians(ROT_ANGLE)
+        Rx = np.array([[1, 0, 0],[0, np.cos(tx), -np.sin(tx)] , [0, np.sin(tx), np.cos(tx)]])
+        velo_point_cloud = np.matmul(velo_point_cloud[:,0:3],Rx)
+        angles      = angles_3D(velo_point_cloud)
+        IDs         = identification_angle_3D(angles, 64)
+
+    elif(ID_MODE == 3):
+        tx = np.radians(ROT_ANGLE)
+        Rx = np.array([[1, 0, 0],[0, np.cos(tx), -np.sin(tx)] , [0, np.sin(tx), np.cos(tx)]])
+        velo_point_cloud = np.matmul(velo_point_cloud[:,0:3],Rx)
+        angles      = angles_3D(velo_point_cloud)
+
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 64)
+        std         = np.abs(mean[0]-mean[1])/5
+        IDs         = identification_prob_3D(angles,mean,std )
+
+    else:
+        angles      = angles_3D(velo_point_cloud)
+        IDs         = identification_angle_3D(angles, 64)
 
     xy          = projection_3D_2D(velo_point_cloud,velo_mat_T,cam_mat_P)
     filtered_xy = filter_indices_xy(xy, cam_image.shape)
