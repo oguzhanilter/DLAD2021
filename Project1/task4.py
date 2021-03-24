@@ -132,6 +132,11 @@ def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intr
                     Forth column : reflection
         extrinsic:  4x4 (numpy.array)
                     The homogeneous velodyne to rectified camera coordinate transformations
+        RT_velo2IMU: 4x4 (numpy.array)
+                    From velodyne to imu frame of reference tranformation
+        RT_IMU2velo: 4x4 (numpy.array)
+                    From imu to velodyne frame of reference tranformation
+        
         instrinsic: 3x4 (numpy.array)
                     The intrinsic projection matrices to Cam X after rectification
     Return:
@@ -156,9 +161,10 @@ def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intr
     homo_coor = np.ones(len(front_hemisphere_x))
 
     XYZ = np.stack((front_hemisphere_x,front_hemisphere_y,front_hemisphere_z,homo_coor))
+    
+    #move points in imu frame of reference
     XYZ = np.matmul(RT_velo2IMU, XYZ)
-        
-    projection_matrix = np.matmul(intrinsic,extrinsic) 
+    
     
     
     #have to process each point separately and correct for distortions
@@ -172,16 +178,24 @@ def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intr
         interp = (h_angle - lidar_end_yaw)/(lidar_start_yaw - lidar_end_yaw)
         
         #linearly interpolate between timestamps
-        dt =   interp*lidar_ts + (1-interp)*lidar_te - lidar_t
+        dt =   (interp)*lidar_ts + (1-interp)*lidar_te - lidar_t
         
         R = Rot.from_euler('z',imu_rot[2]*dt, degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
-        T = imu_vel*dt*np.sign(h_angle) 
+        T = imu_vel*dt #*np.sign(h_angle) 
 
+        #if dt < 0:
+        #    XYZ[2,i] += -h_angle+1
+
+        #convert from imu frame of reference to lidar frame of reference
         RT = create_homo_trans(R,T)
+
+        #apply correction to lidar point
         XYZ[:,i] = np.matmul(RT,XYZ[:,i])
     
+    #translate points back in velo frame of reference
     XYZ = np.matmul(RT_IMU2velo, XYZ)
         
+    projection_matrix = np.matmul(intrinsic,extrinsic) 
     xy = np.matmul(projection_matrix,XYZ)
     
     xy = xy / xy[2,None]
@@ -359,7 +373,7 @@ def get_lidar_orientations(lidar_ts,lidar_te,lidar_t):
     #angle on z axis of lidar scanning direction
     #remember lidar scans in counter clockwise direction
     lidar_period = lidar_te-lidar_ts #period that lidar used to complete full rotation
-    lidar_rot = math.pi*2/lidar_period
+    lidar_rot = math.pi*2*10 #/lidar_period lidar spinning at 10Hz
     lidar_start_yaw = lidar_rot*(lidar_t-lidar_ts)
     # lidar_end_yaw = lidar_start_yaw - math.pi*2 #giust start + 360° in clockwise direction
     lidar_end_yaw = lidar_start_yaw + (lidar_ts-lidar_te)*lidar_rot
@@ -409,10 +423,12 @@ if __name__ =="__main__":
     #data points for imu vel and angular vel to do interpolation (for previous, current and next frame)
     imu_vel_interp = [load_oxts_velocity(OXTS_FILE_PATH+'/'+get_frame_name(frame+i)+'.txt') for i in frame_interp]
     imu_rot_interp = [load_oxts_angular_rate(OXTS_FILE_PATH+'/'+get_frame_name(frame+i)+'.txt') for i in frame_interp]
-    # imu in velo frame
-    imu_vel_interp = [np.matmul(vel,R_imu2velo) for vel in imu_vel_interp]
-    imu_vel_interp = [vel + T_imu2velo[0,:] for vel in imu_vel_interp]
-    imu_rot_interp = [np.matmul(rot,R_imu2velo) for rot in imu_rot_interp]
+    # imu speed in velo frame  (do not apply translation matrix as )
+    #imu_vel_interp = [np.matmul(vel,R_imu2velo) for vel in imu_vel_interp]
+    #imu_vel_interp = [vel + T_imu2velo[0,:] for vel in imu_vel_interp]
+
+    #leave imu angualr speed in imu frame 
+    #imu_rot_interp = [np.matmul(rot,R_imu2velo) for rot in imu_rot_interp]
     #create an interpolation function for imu vel and rot
     imu_vel_f = interp1d(imu_t_interp,imu_vel_interp,axis=0)
     imu_rot_f = interp1d(imu_t_interp,imu_rot_interp,axis=0)
@@ -422,11 +438,6 @@ if __name__ =="__main__":
     imu_vel = imu_vel_f(lidar_t)
     imu_rot = imu_rot_f(lidar_t)
 
-    # ------ bypass ends    
-
-
-    imu_vel = load_oxts_velocity(OXTS_FILE_PATH+'/'+get_frame_name(frame)+'.txt')
-    imu_rot = load_oxts_angular_rate(OXTS_FILE_PATH+'/'+get_frame_name(frame)+'.txt')
     
     #READ POINT CLOUD
     velo_point_cloud = load_from_bin(script_path+LIDAR_PATH+'/data/' +frame_name+'.bin')
@@ -439,7 +450,7 @@ if __name__ =="__main__":
     #create tranformation velo to cam in homogeneous coorindates
     RT_velo2cam = create_homo_trans(R_velo2cam,T_velo2cam)
     RT_IMU2velo = create_homo_trans(R_imu2velo,T_imu2velo)
-    RT_velo2IMU = create_homo_trans(R_imu2velo.transpose(), -T_imu2velo)
+    RT_velo2IMU = create_homo_trans(np.linalg.inv(R_imu2velo), -T_imu2velo)
 
 
     #PROJECT lidar point cloud data into image plane
