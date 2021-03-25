@@ -373,10 +373,10 @@ def get_lidar_orientations(lidar_ts,lidar_te,lidar_t):
     #angle on z axis of lidar scanning direction
     #remember lidar scans in counter clockwise direction
     lidar_period = lidar_te-lidar_ts #period that lidar used to complete full rotation
-    lidar_rot = math.pi*2*10 #/lidar_period lidar spinning at 10Hz
+    lidar_rot = math.pi*2/lidar_period #lidar spinning at 10Hz
     lidar_start_yaw = lidar_rot*(lidar_t-lidar_ts)
-    # lidar_end_yaw = lidar_start_yaw - math.pi*2 #giust start + 360° in clockwise direction
-    lidar_end_yaw = lidar_start_yaw + (lidar_ts-lidar_te)*lidar_rot
+    # lidar_end_yaw = lidar_start_yaw - math.pi*2 #jiust start + 360° in clockwise direction
+    lidar_end_yaw = lidar_start_yaw - math.pi*2#+ (lidar_ts-lidar_te)*lidar_rot
 
     return lidar_start_yaw, lidar_end_yaw
 
