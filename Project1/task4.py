@@ -180,7 +180,7 @@ def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intr
         #linearly interpolate between timestamps
         dt =   (interp)*lidar_ts + (1-interp)*lidar_te - lidar_t
         
-        R = Rot.from_euler('z',imu_rot[2]*dt, degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
+        R = Rot.from_euler('z',imu_rot[2]*dt*np.sign(dt), degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
         T = imu_vel*dt #*np.sign(h_angle) 
 
         #if dt < 0:
@@ -280,7 +280,7 @@ def visualize_task4(cam_image, xy,velo_point_cloud):
     x =  velo_point_cloud[xy[2,:].astype(np.uint32)][:,0]
     y =  velo_point_cloud[xy[2,:].astype(np.uint32)][:,1]
     z =  velo_point_cloud[xy[2,:].astype(np.uint32)][:,2]
-    depth = x #np.sqrt(np.square(x)+np.square(y)+np.square(z))
+    depth = np.sqrt(np.square(x)+np.square(y)+np.square(z))
     hue = depth_color(depth,0,60)
     
     xy = xy.astype(int)
@@ -290,7 +290,6 @@ def visualize_task4(cam_image, xy,velo_point_cloud):
         idx = xy[2,i].astype(np.uint32)
         
         color = hsv2rgb(hue[i],1,1)
-        #color = hsv2rgb(velo_point_cloud[xy[2,i].astype(np.uint32),0],1,1)
         
         cam_image = cv2.circle(cam_image, (xy[1,i], xy[0,i]), radius=2, color=color, thickness=-1)
         #image[xy[0,i], xy[1,i],:] = [color[2], color[1],color[0]]
@@ -397,7 +396,7 @@ if __name__ =="__main__":
     # LOAD DATA FOR specific frame
 
     #interesting debugging frame = 2
-    frame = 312 # 37
+    frame = 37 #312 # 37
     frame_interp = [-1,0,1] #list of frame offsets used for imu data interpolation -1 = previus, 0 = current, 1=next etc
 
     frame_name = get_frame_name(frame)
@@ -435,8 +434,8 @@ if __name__ =="__main__":
     #imu_vel_f(t) = imu data interpolated at timestamp t
 
     #imu data at timestep lidar is looking forward (use this as "average" imu data during correction)
-    imu_vel = imu_vel_f(lidar_t)
-    imu_rot = imu_rot_f(lidar_t)
+    imu_vel = imu_vel_f(camera_t)
+    imu_rot = imu_rot_f(camera_t)
 
     
     #READ POINT CLOUD
