@@ -191,12 +191,14 @@ if __name__ =="__main__":
 
     velo_point_cloud    = data['velodyne'] 
     velo_mat_T          = data['T_cam0_velo']   # extrinsic camera parameters
-    cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters    
+    cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
     cam_image           = data['image_2']
     labels              = data['labels']
     label_color_map     = data['color_map']
     point_labels        = data['sem_label']
     objects             = data['objects']
+
+    k                   = data['K_cam2']
 
    
     xy          = projection_3D_2D(velo_point_cloud,velo_mat_T,cam_mat_P)
@@ -216,6 +218,4 @@ if __name__ =="__main__":
     if Q2:
         im = Image.fromarray(image_with_3D_box)
         im.show()
-
-        im.save( "./task2.png", "PNG")
     
