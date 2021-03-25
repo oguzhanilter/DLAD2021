@@ -192,6 +192,7 @@ if __name__ =="__main__":
     velo_point_cloud    = data['velodyne'] 
     velo_mat_T          = data['T_cam0_velo']   # extrinsic camera parameters
     cam_mat_P           = data['P_rect_20']     # intrinsic camera parameters
+    cam_mat_P0          = data['P_rect_00']     
     cam_image           = data['image_2']
     labels              = data['labels']
     label_color_map     = data['color_map']
@@ -204,7 +205,7 @@ if __name__ =="__main__":
     new_image   = visualize(cam_image, filtered_xy, point_labels, label_color_map)
 
     object_box_points_3D = object_box_points(objects)
-    object_box_points_2D = np.matmul(cam_mat_P,object_box_points_3D)
+    object_box_points_2D = np.matmul(cam_mat_P0,object_box_points_3D)
     object_box_points_2D = object_box_points_2D / object_box_points_2D[2,None]
     image_with_3D_box    = visualize_3D_box(new_image,object_box_points_2D)
 
@@ -216,4 +217,6 @@ if __name__ =="__main__":
     if Q2:
         im = Image.fromarray(image_with_3D_box)
         im.show()
+
+        im.save( "./task2.png", "PNG")
     
