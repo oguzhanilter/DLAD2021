@@ -293,25 +293,7 @@ def visualize_task4(cam_image, xy,velo_point_cloud):
         
         cam_image = cv2.circle(cam_image, (xy[1,i], xy[0,i]), radius=2, color=color, thickness=-1)
         #image[xy[0,i], xy[1,i],:] = [color[2], color[1],color[0]]
-        """  
-        if idx%10 == 0:
-            #im = Image.fromarray(new_image)
-            #im.show()
-            
-            im = np.asarray(cam_image).astype(np.uint8)
-    
-            cv2.destroyAllWindows()
-            cv2.imshow('asd', im)
-            k = cv2.waitKey(0)
-            
-            print("laser id: ",xy[5,i])
-            
-            if k==113: #q key
-                cv2.destroyAllWindows()
-                break
-    #cv2.destroyAllWindows()
-    """
-
+        
     return np.asarray(cam_image).astype(np.uint8)
 
 def create_homo_trans(R,T):
