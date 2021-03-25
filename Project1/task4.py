@@ -180,7 +180,7 @@ def corrected_projection_3D_2D(points, extrinsic, RT_velo2IMU, RT_IMU2velo, intr
         #linearly interpolate between timestamps
         dt =   (interp)*lidar_ts + (1-interp)*lidar_te - lidar_t
         
-        R = Rot.from_euler('z',imu_rot[2]*dt*np.sign(dt), degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
+        R = Rot.from_euler('z',-imu_rot[2]*dt, degrees=False).as_matrix() #Rs*coeff + Re*(1-coeff)
         T = imu_vel*dt #*np.sign(h_angle) 
 
         #if dt < 0:
@@ -434,8 +434,8 @@ if __name__ =="__main__":
     #imu_vel_f(t) = imu data interpolated at timestamp t
 
     #imu data at timestep lidar is looking forward (use this as "average" imu data during correction)
-    imu_vel = imu_vel_f(camera_t)
-    imu_rot = imu_rot_f(camera_t)
+    imu_vel = imu_vel_f(lidar_t)
+    imu_rot = imu_rot_f(lidar_t)
 
     
     #READ POINT CLOUD
