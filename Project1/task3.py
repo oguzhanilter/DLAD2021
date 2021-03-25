@@ -6,10 +6,13 @@ from PIL import Image
 from load_data import load_data
 
 RELATIVE_PATH_TO_DATA = 'data'
-DATA_FILE_NAME = 'demo.p'
+DATA_FILE_NAME = 'data.p'
 
-ID_MODE = 2 # 0 for histogram , 1 for prob, 2 for rotation, 3 for rot and prob
-ROT_ANGLE = -1
+ID_MODE = 0 # 0 for histogram , 1 for prob, 2 for rotation, 3 for rot and prob
+
+NUMBER_OF_BIN = 64
+ROT_ANGLE = -1.5
+IMAGE_NAME = "task3_result.png"
 
 
 
@@ -57,7 +60,7 @@ def identification_angle_3D(angles, number_of_group):
                       Number of groups in points 
     """  
 
-    _ , bin_edges = np.histogram(angles[1,:], bins=64)
+    _ , bin_edges = np.histogram(angles[1,:], bins=NUMBER_OF_BIN)
     IDs = np.zeros(len(angles[0,:]))
 
     for i in range(number_of_group):
@@ -190,7 +193,7 @@ if __name__ =="__main__":
 
     if(ID_MODE == 1):
         angles      = angles_3D(velo_point_cloud)
-        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 64)
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), NUMBER_OF_BIN)
         std         = np.abs(mean[0]-mean[1])/5
         IDs         = identification_prob_3D(angles,mean,std )
 
@@ -207,8 +210,8 @@ if __name__ =="__main__":
         velo_point_cloud = np.matmul(velo_point_cloud[:,0:3],Rx)
         angles      = angles_3D(velo_point_cloud)
 
-        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 64)
-        std         = np.abs(mean[0]-mean[1])/5
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 66)
+        std         = np.abs(mean[0]-mean[1])/4
         IDs         = identification_prob_3D(angles,mean,std )
 
     else:
@@ -222,6 +225,7 @@ if __name__ =="__main__":
 
     im = Image.fromarray(new_image)
     im.show()
+    im.save(IMAGE_NAME)
 
 
    

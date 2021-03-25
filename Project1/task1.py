@@ -22,9 +22,9 @@ def scale_to_255(a, min, max, dtype=np.uint8):
 
 
 # In our case side/front/rear range is 120m 
-# The LIDAR sensor is located at 1.73 m above the ground so min_height is -1.73
+# The LIDAR sensor is located at 1.73 m above the ground
 # The max height that can be calculated is tan(vertical range upwards) * range + LIDAR location
-# Vertical Range Upwards is 0.2 degree
+# Vertical Range Upwards is 2 degree
 def birds_eye_point_cloud(points,
                           side_range=(-120, 120),
                           fwd_range=(-120,120),
@@ -63,15 +63,15 @@ def birds_eye_point_cloud(points,
 
     # INDICES FILTER - of values within the desired rectangle
     # Note left side is positive y axis in LIDAR coordinates
-    ff = np.logical_and((x > fwd_range[0]), (x < fwd_range[1]))
+    ff = np.logical_and((x > fwd_range[0]),   (x < fwd_range[1]))
     ss = np.logical_and((y > -side_range[1]), (y < -side_range[0]))
-    zz = np.logical_and((z > h_range[0]), (y < h_range[1]))
+    zz = np.logical_and((z > h_range[0]),     (y < h_range[1]))
     indices = np.argwhere(np.logical_and(ff,ss,zz)).flatten()
     
 
     # CONVERT TO PIXEL POSITION VALUES - Based on resolution
     x_img = (-y[indices]/res).astype(np.int32) # x axis is -y in LIDAR
-    y_img = (x[indices]/res).astype(np.int32)  # y axis is -x in LIDAR
+    y_img = (x[indices]/res).astype(np.int32)  # y axis is x in LIDAR
                                                      # will be inverted later
 
     # SHIFT PIXELS TO HAVE MINIMUM BE (0,0)
@@ -80,24 +80,18 @@ def birds_eye_point_cloud(points,
     y_img -= int(np.floor(fwd_range[0]/res))
 
     # set pixel values for each of the choosen indices to the reflectance value
-    #pixel_values = np.clip(a = r_lidar[indices],
-    #                       a_min=min_height,
-    #                       a_max=max_height)
-    pixel_values = r_lidar[indices]
-
     # RESCALE THE REFLECTANCE VALUES - to be between the range 0-255
-    pixel_values  = scale_to_255(pixel_values, min=r_min, max=r_max)
+    pixel_values  = scale_to_255(r_lidar[indices], min=r_min, max=r_max)
 
     # FILL PIXEL VALUES IN IMAGE ARRAY
-
     #create image array
     x_max = int((side_range[1] - side_range[0])/res)
     y_max = int((fwd_range[1] - fwd_range[0])/res)
     im = np.zeros([y_max, x_max], dtype=np.uint8)
 
-    # If multiple points lie within the same bin, the highest intensity point should be sampled
+    # If multiple points lie within the same bin, the highest reflection point should be sampled
     # by sorting the reflectance values in ascending order, when filling the image array, the points
-    # with highest reflectance for one bin will overwrite an eventual point in the same bin with lower
+    # with highest reflectance for one pixel will overwrite an eventual point in the same bin with lower
     # reflectance
     sorted_inds = pixel_values.argsort()
     x_img = x_img[sorted_inds]
@@ -126,7 +120,7 @@ if __name__ =="__main__":
     data = get_data()
     
     birds_eye_point_cloud(data['velodyne'],
-                          side_range=(-50, 50),
+                          side_range=(-30, 30),
                           fwd_range=(-60,60),
                           res=0.2)
 
