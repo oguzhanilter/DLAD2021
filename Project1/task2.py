@@ -6,7 +6,7 @@ from PIL import Image
 from load_data import load_data
 
 RELATIVE_PATH_TO_DATA = 'data'
-DATA_FILE_NAME = 'demo.p'
+DATA_FILE_NAME = 'data.p'
 Q1 = False
 Q2 = True
 
