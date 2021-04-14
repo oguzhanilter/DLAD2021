@@ -24,7 +24,7 @@ def depth_color(val, min_d=0, max_d=120):
     close distance = red , far distance = blue
     """
     np.clip(val, 0, max_d, out=val)  # max distance is 120m but usually not usual
-    return (((val - min_d) / (max_d - min_d)) * 120).astype(np.uint8)
+    return (-1*((val - min_d) / (max_d - min_d)) * 255).astype(np.uint8)
 
 
 def line_color(val, min_d=1, max_d=64):

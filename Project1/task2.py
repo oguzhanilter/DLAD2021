@@ -6,7 +6,7 @@ from PIL import Image
 from load_data import load_data
 
 RELATIVE_PATH_TO_DATA = 'data'
-DATA_FILE_NAME = 'demo.p'
+DATA_FILE_NAME = 'data.p'
 Q1 = False
 Q2 = True
 
@@ -199,6 +199,8 @@ if __name__ =="__main__":
     label_color_map     = data['color_map']
     point_labels        = data['sem_label']
     objects             = data['objects']
+
+    k                   = data['K_cam2']
 
    
     xy          = projection_3D_2D(velo_point_cloud,velo_mat_T,cam_mat_P)

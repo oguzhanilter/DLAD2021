@@ -47,7 +47,11 @@ class Visualizer():
         
         colors_norm = np.array(colors)/256
 
-        self.sem_vis.set_data(points,face_color=colors_norm, size=3)
+        #self.sem_vis.set_gl_state(depth_test=True, blend=True,
+        #                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+
+        self.sem_vis.antialias  = 0.5
+        self.sem_vis.set_data(points,face_color=colors_norm, edge_width=0.6,size=4,scaling=False) #edge_width=0.1
     
     def update_boxes(self, corners):
         '''
@@ -70,7 +74,7 @@ class Visualizer():
                       if i>0 else self.connect
         self.obj_vis.set_data(corners.reshape(-1,3),
                               connect=connect,
-                              width=2,
+                              width=5,
                               color=[0,1,0,1])
 
 
@@ -90,6 +94,15 @@ def object_box_points(objects,velo_cam0_mat_T):
     z2 = [1,3,5,7]
     y1 = [0,1,4,5]
     y2 = [2,3,6,7]
+
+    trans = velo_cam0_mat_T[:3,3]
+    rot = velo_cam0_mat_T[:3,:3]
+    rot_inv = np.linalg.inv(rot)
+
+    cam0_velo_mat_T = np.zeros((4, 4))
+    cam0_velo_mat_T[:3,:3] = rot_inv
+    cam0_velo_mat_T[:3,3] = -np.matmul(rot_inv,trans)
+    cam0_velo_mat_T[3,3] = 1
 
     for i in range(number_of_objects):
 
@@ -124,15 +137,6 @@ def object_box_points(objects,velo_cam0_mat_T):
         obj_edges[z1,2] += object_center[2] 
         obj_edges[z2,2] += object_center[2] 
         
-        
-        trans = velo_cam0_mat_T[:3,3]
-        rot = velo_cam0_mat_T[:3,:3]
-        rot_inv = np.linalg.inv(rot)
- 
-        cam0_velo_mat_T = np.zeros((4, 4))
-        cam0_velo_mat_T[:3,:3] = rot_inv
-        cam0_velo_mat_T[:3,3] = -np.matmul(rot_inv,trans)
-        cam0_velo_mat_T[3,3] = 1
  
         obj_edges = np.matmul(obj_edges,np.transpose(cam0_velo_mat_T))
         #obj_edges = obj_edges/obj_edges[None,3]

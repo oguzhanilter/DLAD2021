@@ -8,21 +8,21 @@ import data_utils as du
 
 
 RELATIVE_PATH_TO_DATA = 'data'
-DATA_FILE_NAME = 'demo.p'
-Q1 = False
-Q2 = True
+DATA_FILE_NAME = 'data.p'
+
+ID_MODE = 0 # 0 for histogram , 1 for prob, 2 for rotation, 3 for rot and prob
+
+NUMBER_OF_BIN = 64
+ROT_ANGLE = -1.5
+IMAGE_NAME = "task3_result.png"
+
+
 
 def get_data():
     script_path = os.path.dirname(os.path.realpath(__file__))
     data_path = os.path.join(script_path, RELATIVE_PATH_TO_DATA,DATA_FILE_NAME)
     data = load_data(data_path)
     return data
-
-
-#Creating a Function.
-def normal_dist(x , mean , sd):
-    prob = (np.sqrt(2*np.pi)*sd) * np.exp(-0.5*((x-mean)/sd)**2)
-    return prob
 
 def visualize(image, xy, labels, color_map):
     """ Visualize 2D points on image according to their labels and color map.
@@ -34,23 +34,6 @@ def visualize(image, xy, labels, color_map):
                     First row : x in image coordinates and for sure in frame 
                     Second row: y in image coordinates and for sure in frame
                     Third row : index of the point in the original original data source
-<<<<<<< HEAD
-                    Forth row : vertical angles on the LIDAR frame
-                    Fifth row : horizontal angles on the LIDAR frame  
-        color_map:  dictionary
-                    maps numeric semantic labels to a BGR color for visualization   
-    """
-    """
-    angles = xy[3,:]*57.295779513
-    inside_fov = np.logical_and((angles > -40), (angles < 40))
-    inside_frame_indices = np.argwhere(inside_fov).flatten()
-    xy = xy[:, inside_frame_indices]
-    """
-    angles_vert = xy[4,:]*57.295779513
-    a = 0
-    min_l = -24.9 - a
-    max_l = 2 + a
-=======
         labels:     (numpy.array)
                     object that gives the semantic label of each point within the scene.  
 
@@ -59,7 +42,6 @@ def visualize(image, xy, labels, color_map):
     """       
     xy = xy.astype(int)
     labels = labels[xy[2,:]]
->>>>>>> main
 
     for i in range(len(xy[0])):
         color = color_map[ int(labels[i]%4) ]
@@ -69,10 +51,10 @@ def visualize(image, xy, labels, color_map):
     return np.asarray(image).astype(np.uint8)
 
 def identification_angle_3D(angles, number_of_group):
-    """ Gives every angle an ID. 
+    """ Gives every angle an ID using histogram 
 
     Args:
-        xy:         2xNumberOfPoints (float) (numpy, list)
+        angles:     2xNumberOfPoints (float) (numpy, list)
                     First row : horizontal angles
                     Second row: vertical angles
 
@@ -80,7 +62,7 @@ def identification_angle_3D(angles, number_of_group):
                       Number of groups in points 
     """  
 
-    _ , bin_edges = np.histogram(angles[1,:], bins=64)
+    _ , bin_edges = np.histogram(angles[1,:], bins=NUMBER_OF_BIN)
     IDs = np.zeros(len(angles[0,:]))
 
     for i in range(number_of_group):
@@ -90,23 +72,37 @@ def identification_angle_3D(angles, number_of_group):
         else:
             group       = np.logical_and( ( angles[1,:]>=bin_edges[i] ) , ( angles[1,:]<=bin_edges[i+1] ) )
 
-<<<<<<< HEAD
-        #color = color_map[i%4]
-        hue = du.line_color(np.array([[i]]))
-        c = np.uint8([[[hue,255,255 ]]])   
-        cHSV = cv2.cvtColor(c, cv2.COLOR_HSV2RGB)
-        color = cHSV[0,0].tolist()
-
-=======
->>>>>>> main
         group_inds  = np.argwhere(group).flatten()
         IDs[group_inds] = i
 
     return IDs
 
 
+def normal_dist(x , mean , sdt):
+    prob_density = (np.sqrt(2*np.pi)*sdt) * np.exp(-0.5*((x-mean)/sdt)**2)
+    return prob_density
 
+def identification_prob_3D(angles, mean, std):
+    """ Gives every angle an ID using the normal distribution 
 
+    Args:
+        angles:     2xNumberOfPoints (float) (numpy, list)
+                    First row : horizontal angles
+                    Second row: vertical angles
+
+        number_of_ID: (int)
+                      Number of groups in points 
+    """  
+
+    IDs = np.zeros(len(angles[0,:]))
+
+    for i in range(len(angles[0,:])):
+        prob = [normal_dist(angles[1,i],m,std ) for m in mean]
+        IDs[i] = np.argmax(prob)
+
+    return IDs
+
+    
 def filter_indices_xy(xy, image_size):
     """ Filter the points if they are not projected inside the frame of the image.
 
@@ -118,17 +114,6 @@ def filter_indices_xy(xy, image_size):
         image_size: (tuple of two int)
                     Size of the image in pixel 
                     First element x; Second element y  
-<<<<<<< HEAD
-    Returns: 
-        filtered_xy: 4xNumberOfPoints (float) (numpy, list)
-                    Points that are inside the frame
-                    First row : x in image coordinates 
-                    Second row: y in image coordinates 
-                    Third row : index of the point in the original original data source
-                    Forth row : vertical angles on the LIDAR frame
-                    Fifth row : horizontal angles on the LIDAR frame  
-=======
->>>>>>> main
     """      
 
     x   = xy[1,:]
@@ -157,8 +142,8 @@ def angles_3D(points):
     y = points[:, 1]
     z = points[:, 2]
 
-    angles_horizontal = np.arctan2(y,x)*57.295779513
-    angles_vertical = np.arctan2(z, np.sqrt(np.square( x )+ np.square( y ) ) )*57.295779513
+    angles_horizontal = np.degrees(np.arctan2(y,x))
+    angles_vertical = np.degrees(np.arctan2(z, np.sqrt(np.square( x )+ np.square( y ) ) ))
 
     angles = np.vstack((angles_horizontal, angles_vertical))
     return angles 
@@ -178,17 +163,6 @@ def projection_3D_2D(points, extrinsic, intrinsic):
                     The homogeneous velodyne to rectified camera coordinate transformations
         instrinsic: 3x4 (numpy.array)
                     The intrinsic projection matrices to Cam X after rectification
-<<<<<<< HEAD
-    Return:
-        xy:         (num points x 4) numpy.array object.
-                    First row : x 
-                    Second row: y 
-                    Third row : indices of original dataset
-                    Forth row : vertical angles on the LIDAR frame
-                    Fifth row : horizontal angles on the LIDAR frame     
-
-=======
->>>>>>> main
     """   
     front_hemisphere = points[:, 0] > 0 
     front_hemisphere_indices = np.argwhere(front_hemisphere).flatten()      
@@ -196,13 +170,6 @@ def projection_3D_2D(points, extrinsic, intrinsic):
     front_hemisphere_x = points[front_hemisphere_indices, 0]
     front_hemisphere_y = points[front_hemisphere_indices, 1]
     front_hemisphere_z = points[front_hemisphere_indices, 2]
-<<<<<<< HEAD
-    angles_horizontal = np.arctan2(front_hemisphere_y,front_hemisphere_x)
-
-    a = np.sqrt(np.square(front_hemisphere_x )+ np.square(front_hemisphere_y))
-    angles_vertical = np.arctan2(front_hemisphere_z,a)
-=======
->>>>>>> main
     homo_coor = np.ones(len(front_hemisphere_x))
     
     XYZ = np.stack((front_hemisphere_x,front_hemisphere_y,front_hemisphere_z,homo_coor))
@@ -212,11 +179,6 @@ def projection_3D_2D(points, extrinsic, intrinsic):
     xy = xy / xy[2,None]
 
     xy[2,:] = front_hemisphere_indices
-<<<<<<< HEAD
-    xy = np.vstack((xy, angles_horizontal)) 
-    xy = np.vstack((xy, angles_vertical)) 
-=======
->>>>>>> main
     return xy
 
 if __name__ =="__main__":
@@ -231,8 +193,32 @@ if __name__ =="__main__":
 
     label_color_map = [[255,0,0], [0,255,0], [0,0,255,], [0,255,255]]
 
-    angles      = angles_3D(velo_point_cloud)
-    IDs         = identification_angle_3D(angles, 64) 
+    if(ID_MODE == 1):
+        angles      = angles_3D(velo_point_cloud)
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), NUMBER_OF_BIN)
+        std         = np.abs(mean[0]-mean[1])/5
+        IDs         = identification_prob_3D(angles,mean,std )
+
+    elif(ID_MODE == 2):
+        tx = np.radians(ROT_ANGLE)
+        Rx = np.array([[1, 0, 0],[0, np.cos(tx), -np.sin(tx)] , [0, np.sin(tx), np.cos(tx)]])
+        velo_point_cloud = np.matmul(velo_point_cloud[:,0:3],Rx)
+        angles      = angles_3D(velo_point_cloud)
+        IDs         = identification_angle_3D(angles, 64)
+
+    elif(ID_MODE == 3):
+        tx = np.radians(ROT_ANGLE)
+        Rx = np.array([[1, 0, 0],[0, np.cos(tx), -np.sin(tx)] , [0, np.sin(tx), np.cos(tx)]])
+        velo_point_cloud = np.matmul(velo_point_cloud[:,0:3],Rx)
+        angles      = angles_3D(velo_point_cloud)
+
+        mean        = np.linspace(min(angles[1,:]), max(angles[1,:]), 66)
+        std         = np.abs(mean[0]-mean[1])/4
+        IDs         = identification_prob_3D(angles,mean,std )
+
+    else:
+        angles      = angles_3D(velo_point_cloud)
+        IDs         = identification_angle_3D(angles, 64)
 
     xy          = projection_3D_2D(velo_point_cloud,velo_mat_T,cam_mat_P)
     filtered_xy = filter_indices_xy(xy, cam_image.shape)
@@ -241,9 +227,14 @@ if __name__ =="__main__":
 
     im = Image.fromarray(new_image)
     im.show()
+    im.save(IMAGE_NAME)
 
 <<<<<<< HEAD
 =======
 
+<<<<<<< HEAD
 >>>>>>> main
    
+=======
+   
+>>>>>>> main
