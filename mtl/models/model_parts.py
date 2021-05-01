@@ -123,7 +123,34 @@ class DecoderDeeplabV3p(torch.nn.Module):
         super(DecoderDeeplabV3p, self).__init__()
 
         # TODO: Implement a proper decoder with skip connections instead of the following
-        self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
+        #self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
+        
+        self.conv1 = torch.nn.Conv2d(256, 48, 1, bias=False)
+        self.bn1 = BatchNorm(48)
+        self.relu = torch.nn.ReLU()
+        self.last_conv = torch.nn.Sequential(torch.nn.Conv2d(304, 256, kernel_size=3, stride=1, padding=1, bias=False),
+                                       BatchNorm(256),
+                                       torch.nn.ReLU(),
+                                       torch.nn.Dropout(0.5),
+                                       torch.nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+                                       BatchNorm(256),
+                                       torch.nn.ReLU(),
+                                       torch.nn.Dropout(0.1),
+                                       torch.nn.Conv2d(256, num_classes, kernel_size=1, stride=1))
+        self._init_weight()
+    
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, torch.nn.Conv2d):
+                torch.torch.nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, SynchronizedBatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, torch.nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+
 
     def forward(self, features_bottleneck, features_skip_4x):
         """
@@ -134,10 +161,22 @@ class DecoderDeeplabV3p(torch.nn.Module):
         """
         # TODO: Implement a proper decoder with skip connections instead of the following; keep returned
         #       tensors in the same order and of the same shape.
-        features_4x = F.interpolate(
-            features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
-        )
-        predictions_4x = self.features_to_predictions(features_4x)
+        # features_4x = F.interpolate(
+        #     features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
+        # )
+        # predictions_4x = self.features_to_predictions(features_4x)
+
+        features_skip_4x = self.conv1(features_skip_4x)
+        features_skip_4x = self.bn1(features_skip_4x)
+        features_skip_4x = self.relu(features_skip_4x)
+
+
+        features_bottleneck = F.interpolate(features_bottleneck, size=features_skip_4x.size()[2:], mode='bilinear', align_corners=True)
+        features_bottleneck = torch.cat((features_bottleneck, features_skip_4x), dim=1)
+        features_4x = self.last_conv(features_bottleneck)
+
+        predictions_4x = self.features_to_predictions(features_skip_4x)
+
         return predictions_4x, features_4x
 
 
@@ -154,12 +193,38 @@ class ASPP(torch.nn.Module):
     def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
         super().__init__()
         # TODO: Implement ASPP properly instead of the following
-        self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        self.conv_out1 = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        self.conv_out2 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=6)
+        self.conv_out3 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=12)
+        self.conv_out4 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=18)
+
+        self.global_avg_pool = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d((1, 1)),
+                                        torch.nn.Conv2d(in_channels, 256, 1, stride=1, bias=False),
+                                        BatchNorm(256),
+                                        torch.nn.ReLU())
+        self.conv1 = torch.nn.Conv2d(1280, 256, 1, bias=False)
+        self.bn1 = BatchNorm(256)
+        self.relu = torch.nn.ReLU()
+        self.dropout = torch.nn.Dropout(0.5)
+        self._init_weight()
 
     def forward(self, x):
         # TODO: Implement ASPP properly instead of the following
-        out = self.conv_out(x)
-        return out
+
+        x1 = self.conv_out1(x)
+        x2 = self.conv_out2(x)
+        x3 = self.conv_out3(x)
+        x4 = self.conv_out4(x)
+        x5 = self.global_avg_pool(x)
+        x5 = F.interpolate(x5, size=x4.size()[2:], mode='bilinear', align_corners=True)
+        x = torch.cat((x1, x2, x3, x4, x5), dim=1)
+
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        #out = self.conv_out(x)
+        return self.dropout(x)
 
 
 class SelfAttention(torch.nn.Module):
