@@ -12,7 +12,7 @@ class ModelDeepLabV3Plus(torch.nn.Module):
 
         self.encoder = Encoder(
             cfg.model_encoder_name,
-            pretrained=False,
+            pretrained=True,
             zero_init_residual=True,
             replace_stride_with_dilation=(False, False, False),
         )
