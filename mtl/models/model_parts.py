@@ -126,26 +126,23 @@ class DecoderDeeplabV3p(torch.nn.Module):
         #self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
         
         self.conv1 = torch.nn.Conv2d(256, 48, 1, bias=False)
-        self.bn1 = BatchNorm(48)
+        self.bn1 = torch.nn.BatchNorm2d(48)
         self.relu = torch.nn.ReLU()
         self.last_conv = torch.nn.Sequential(torch.nn.Conv2d(304, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                                       BatchNorm(256),
+                                       torch.nn.BatchNorm2d(256),
                                        torch.nn.ReLU(),
                                        torch.nn.Dropout(0.5),
                                        torch.nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                                       BatchNorm(256),
+                                       torch.nn.BatchNorm2d(256),
                                        torch.nn.ReLU(),
                                        torch.nn.Dropout(0.1),
-                                       torch.nn.Conv2d(256, num_classes, kernel_size=1, stride=1))
+                                       torch.nn.Conv2d(256, num_out_ch, kernel_size=1, stride=1))
         self._init_weight()
     
     def _init_weight(self):
         for m in self.modules():
             if isinstance(m, torch.nn.Conv2d):
                 torch.torch.nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, SynchronizedBatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
             elif isinstance(m, torch.nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -200,13 +197,24 @@ class ASPP(torch.nn.Module):
 
         self.global_avg_pool = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d((1, 1)),
                                         torch.nn.Conv2d(in_channels, 256, 1, stride=1, bias=False),
-                                        BatchNorm(256),
+                                        torch.nn.BatchNorm2d(out_channels),
                                         torch.nn.ReLU())
         self.conv1 = torch.nn.Conv2d(1280, 256, 1, bias=False)
-        self.bn1 = BatchNorm(256)
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
         self.relu = torch.nn.ReLU()
         self.dropout = torch.nn.Dropout(0.5)
         self._init_weight()
+
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, torch.nn.Conv2d):
+                # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                # m.weight.data.normal_(0, math.sqrt(2. / n))
+                torch.nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, torch.nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
 
     def forward(self, x):
         # TODO: Implement ASPP properly instead of the following
