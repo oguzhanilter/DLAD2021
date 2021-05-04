@@ -229,12 +229,3 @@ if __name__ =="__main__":
     im.show()
     im.save(IMAGE_NAME)
 
-<<<<<<< HEAD
-=======
-
-<<<<<<< HEAD
->>>>>>> main
-   
-=======
-   
->>>>>>> main
