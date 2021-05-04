@@ -24,13 +24,14 @@ cd /home/ubuntu/code/
 python -m mtl.scripts.train \
   --log_dir /home/ubuntu/results/ \
   --dataset_root /home/ubuntu/miniscapes/ \
-  --name sgd_0.05_16_4_ASSP_Last1_align_1.3 \
+  --name 2 \
   --optimizer sgd \
   --optimizer_lr 0.05 \
   --num_epochs 16 \
   --batch_size 4 \
   --loss_weight_semseg 0.5 \
-  --loss_weight_depth 0.5
+  --loss_weight_depth 0.5 \
+  --model_name deeplabv3branched
 
   # ... you can pass further arguments as specified in utils/config.py
 
