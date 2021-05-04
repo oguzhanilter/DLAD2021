@@ -26,7 +26,10 @@ python -m mtl.scripts.train \
   --dataset_root /home/ubuntu/miniscapes/ \
   --name Default \
   --optimizer sgd \
-  --optimizer_lr 0.01
+  --optimizer_lr 0.05\
+
+
+
   # ... you can pass further arguments as specified in utils/config.py
 
 # If you want to run multiple experiments after each other, just call the training script multiple times.

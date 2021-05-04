@@ -1,0 +1,26 @@
+
+---- 17.04.2021
+---- Notes
+	tmux [olter_1] : 
+	-> cd ~/code -> source activate pytorch_latest_p37 ->  pip install -r requirements.txt
+	--- now sourced the env and installed all requirements
+	
+	-> No need all above ... 
+		aws_start_instance.py --bare to start instance without start the a training.
+		to start training source aws_train_in_tmux.sh -> this will source aws_train.sh
+		aws_train.sh contains parameters. Many training can be started one after another by simply 
+		putting the 
+		python -m mtl.scripts.train \
+  		--log_dir /home/ubuntu/results/ \
+		--dataset_root /home/ubuntu/miniscapes/ \
+		--name Default \
+		--optimizer sgd \
+		--optimizer_lr 0.1
+		
+		repeatedly. Check the line 23 and 32! 
+		
+		!!! Note that a instance will be closed when the aws_train.sh has been executed or after 24 hours since
+		it is set to do so (24h can be changed in aws_start_instance.py)
+		
+	
+

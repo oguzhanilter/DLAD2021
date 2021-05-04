@@ -63,12 +63,12 @@ class Encoder(torch.nn.Module):
             model = fn_name(**encoder_kwargs)
         else:
             # special case due to prohibited dilation in the original BasicBlock
-            pretrained = encoder_kwargs.pop('pretrained', False)
+            pretrained = encoder_kwargs.pop('pretrained', True)
             progress = encoder_kwargs.pop('progress', True)
             model = resnet._resnet(
                 name, BasicBlockWithDilation, _basic_block_layers[name], pretrained, progress, **encoder_kwargs
             )
-        replace_stride_with_dilation = encoder_kwargs.get('replace_stride_with_dilation', (False, False, False))
+        replace_stride_with_dilation = encoder_kwargs.get('replace_stride_with_dilation', (False, False, True))
         assert len(replace_stride_with_dilation) == 3
         if replace_stride_with_dilation[0]:
             model.layer2[0].conv2.padding = (2, 2)
@@ -124,6 +124,21 @@ class DecoderDeeplabV3p(torch.nn.Module):
 
         # TODO: Implement a proper decoder with skip connections instead of the following
         self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
+        
+        self.conv1 = torch.nn.Conv2d(skip_4x_ch, 48, 1, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(48)
+        self.relu = torch.nn.ReLU()
+        self.last_conv = torch.nn.Sequential(torch.nn.Conv2d(48 + bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1, bias=False),
+                                       torch.nn.BatchNorm2d(256),
+                                       torch.nn.ReLU(),
+                                       torch.nn.Conv2d(bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1, bias=False),
+                                       torch.nn.BatchNorm2d(256),
+                                       torch.nn.ReLU(),
+                                       torch.nn.Conv2d(256, num_out_ch, kernel_size=1, stride=1))
+        self.last_conv2 = torch.nn.Sequential(torch.nn.Conv2d(48 + bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1, bias=False),
+                                       torch.nn.BatchNorm2d(256),
+                                       torch.nn.ReLU(),
+                                       torch.nn.Conv2d(256, num_out_ch, kernel_size=1, stride=1))
 
     def forward(self, features_bottleneck, features_skip_4x):
         """
@@ -134,10 +149,21 @@ class DecoderDeeplabV3p(torch.nn.Module):
         """
         # TODO: Implement a proper decoder with skip connections instead of the following; keep returned
         #       tensors in the same order and of the same shape.
-        features_4x = F.interpolate(
-            features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
-        )
-        predictions_4x = self.features_to_predictions(features_4x)
+        # features_4x = F.interpolate(
+        #     features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
+        # )
+        # predictions_4x = self.features_to_predictions(features_4x)
+        
+        features_skip_4x = self.conv1(features_skip_4x)
+        features_skip_4x = self.bn1(features_skip_4x)
+        features_skip_4x = self.relu(features_skip_4x)
+
+
+        features_bottleneck = F.interpolate(features_bottleneck, size=features_skip_4x.size()[2:], mode='bilinear', align_corners=False)
+        features_4x = torch.cat((features_bottleneck, features_skip_4x), dim=1)
+        # predictions_4x = self.last_conv1(features_4x)
+        predictions_4x = self.last_conv2(features_4x)
+
         return predictions_4x, features_4x
 
 
@@ -154,12 +180,38 @@ class ASPP(torch.nn.Module):
     def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
         super().__init__()
         # TODO: Implement ASPP properly instead of the following
-        self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        # self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        self.conv_out1 = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        self.conv_out2 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=6, dilation=6)
+        self.conv_out3 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=12, dilation=12)
+        self.conv_out4 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=18, dilation=18)
+
+        self.global_avg_pool = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d((1, 1)),
+                                        torch.nn.Conv2d(in_channels, out_channels, 1, stride=1, bias=False),
+                                        torch.nn.BatchNorm2d(out_channels),
+                                        torch.nn.ReLU())
+        self.conv1 = torch.nn.Conv2d(5*out_channels, out_channels, 1, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
+        self.relu = torch.nn.ReLU()
+        self.dropout = torch.nn.Dropout(0.5)
 
     def forward(self, x):
         # TODO: Implement ASPP properly instead of the following
-        out = self.conv_out(x)
-        return out
+        # out = self.conv_out(x)
+
+        branch_1 = self.conv_out1(x)
+        branch_2 = self.conv_out2(x)
+        branch_3 = self.conv_out3(x)
+        branch_4 = self.conv_out4(x)
+        branch_5 = self.global_avg_pool(x)
+        branch_5 = F.interpolate(branch_5, size=branch_4.size()[2:], mode='bilinear', align_corners=False)
+        all_branch = torch.cat((branch_1, branch_2, branch_3, branch_4, branch_5), dim=1)
+
+        output = self.conv1(all_branch)
+        output = self.bn1(output)
+        output = self.relu(output)
+
+        return output
 
 
 class SelfAttention(torch.nn.Module):
