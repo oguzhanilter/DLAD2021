@@ -24,9 +24,14 @@ cd /home/ubuntu/code/
 python -m mtl.scripts.train \
   --log_dir /home/ubuntu/results/ \
   --dataset_root /home/ubuntu/miniscapes/ \
-  --name Default \
+  --name sgd_0.05_16_4_ASSP_Last1_align_1.3 \
   --optimizer sgd \
-  --optimizer_lr 0.01
+  --optimizer_lr 0.05 \
+  --num_epochs 16 \
+  --batch_size 4 \
+  --loss_weight_semseg 0.5 \
+  --loss_weight_depth 0.5
+
   # ... you can pass further arguments as specified in utils/config.py
 
 # If you want to run multiple experiments after each other, just call the training script multiple times.
