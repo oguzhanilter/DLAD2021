@@ -4,6 +4,8 @@ import data_utils
 import numpy as np
 from PIL import Image
 from load_data import load_data
+import data_utils as du
+
 
 RELATIVE_PATH_TO_DATA = 'data'
 DATA_FILE_NAME = 'data.p'
@@ -227,5 +229,12 @@ if __name__ =="__main__":
     im.show()
     im.save(IMAGE_NAME)
 
+<<<<<<< HEAD
+=======
 
+<<<<<<< HEAD
+>>>>>>> main
    
+=======
+   
+>>>>>>> main

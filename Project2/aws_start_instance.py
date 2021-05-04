@@ -23,7 +23,7 @@ class color:
 
 def build_ssh_cmd(hostname):
     ssh_options = f"-q -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ConnectTimeout=180 -i {PERMISSION_FILE_PATH}"
-    return f'ssh {ssh_options} {NON_ROOT}@{hostname}'
+    return f"ssh {ssh_options} {NON_ROOT}@{hostname}"
 
 def build_rsync_cmd(hostname):
     ssh_options = f"-q -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ConnectTimeout=180 -i {PERMISSION_FILE_PATH}"
@@ -128,6 +128,9 @@ if __name__ == '__main__':
     instance_dns = dns_response['Reservations'][0]['Instances'][0]['PublicDnsName']
     ssh_command = build_ssh_cmd(instance_dns)
 
+
+    print("ssh command:",ssh_command)
+
     print('Wait for instance and copy files to AWS...')
     successful = False
     while not successful:
@@ -137,6 +140,7 @@ if __name__ == '__main__':
             successful = True
         except subprocess.CalledProcessError:
             print(f'File transfer unsuccessfull, retrying...')
+
 
     print(f'\nSet timeout to {TIMEOUT} hours.\n')
     subprocess.run([f"{ssh_command} nohup bash /home/ubuntu/code/aws_timeout.sh {TIMEOUT}h > timeout.log 2>&1 &"], shell=True, check=True)

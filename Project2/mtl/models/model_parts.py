@@ -123,8 +123,8 @@ class DecoderDeeplabV3p(torch.nn.Module):
         super(DecoderDeeplabV3p, self).__init__()
 
         # TODO: Implement a proper decoder with skip connections instead of the following
-        self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
-        
+        # self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
+
         self.conv1 = torch.nn.Conv2d(skip_4x_ch, 48, 1, bias=False)
         self.bn1 = torch.nn.BatchNorm2d(48)
         self.relu = torch.nn.ReLU()
@@ -180,7 +180,8 @@ class ASPP(torch.nn.Module):
     def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
         super().__init__()
         # TODO: Implement ASPP properly instead of the following
-        # self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        #self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
+        
         self.conv_out1 = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
         self.conv_out2 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=6, dilation=6)
         self.conv_out3 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=12, dilation=12)

@@ -88,7 +88,6 @@ def object_box_points(objects,velo_cam0_mat_T):
     #obj_edges = np.ones((8, 4))
     #obj_edges = np.ones((8, 4))
 
-
     x1 = [0,1,2,3]
     x2 = [4,5,6,7]
     z1 = [0,2,4,6]
@@ -150,7 +149,7 @@ def object_box_points(objects,velo_cam0_mat_T):
     return box_edges
 
 if __name__ == '__main__':
-    data = load_data('data/data.p') # Change to data.p for your final submission 
+    data = load_data('data/demo.p') # Change to data.p for your final submission 
     
     velo_point_cloud    = data['velodyne']
     cam_mat_K           = data['K_cam2']  
@@ -172,7 +171,6 @@ if __name__ == '__main__':
     annotations. You can visualize the bounding boxes using
     visualizer.update_boxes(corners)
     '''
-
 
     object_box_points_3D = object_box_points(objects,velo_cam0_mat_T)
 
