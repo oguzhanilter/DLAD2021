@@ -33,6 +33,7 @@ python -m mtl.scripts.train \
   --loss_weight_depth 0.5 \
   --model_name deeplabv3branched
 
+
   # ... you can pass further arguments as specified in utils/config.py
 
 # If you want to run multiple experiments after each other, just call the training script multiple times.
