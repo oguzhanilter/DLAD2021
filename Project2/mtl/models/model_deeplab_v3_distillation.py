@@ -38,8 +38,8 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
         self.sa_semseg      = SelfAttention(ch_out_encoder_4x, 256 + 48)
         self.sa_depth       = SelfAttention(ch_out_encoder_4x, 256 + 48)
 
-        self.decoder2_semseg= DecoderDeeplabV3p(256 + 48, ch_out_semseg, False)
-        self.decoder2_depth = DecoderDeeplabV3p(256 + 48, ch_out_depth, False)
+        self.decoder2_semseg= DecoderDeeplabV3pDistilled(256 + 48, ch_out_semseg)
+        self.decoder2_depth = DecoderDeeplabV3pDistilled(256 + 48, ch_out_depth)
 
 
     def forward(self, x):
@@ -62,6 +62,9 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
 
         predictions_4x_semseg, features_semseg = self.decoder_semseg(features_tasks_semseg, features[4])
         predictions_4x_depth, features_depth = self.decoder_depth(features_tasks_depth, features[4])
+        
+        predictions_1x_semseg = F.interpolate(predictions_4x_semseg, size=input_resolution, mode='bilinear', align_corners=False)
+        predictions_1x_depth = F.interpolate(predictions_4x_depth, size=input_resolution, mode='bilinear', align_corners=False)
 
         sa_out_semseg= self.sa_semseg(features_semseg) 
         sa_out_depth = self.sa_depth(features_depth)
@@ -69,16 +72,16 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
         final_feature_semseg = features_semseg + sa_out_depth
         final_feature_depth = features_depth + sa_out_semseg
 
-        predictions_4x_semseg, _ = self.decoder_semseg2(final_feature_semseg,None, False)
-        predictions_4x_depth, _ = self.decoder_depth2(final_feature_depth,None, False)
+        predictions_4x_semseg_dist , _ = self.decoder_semseg2(final_feature_semseg)
+        predictions_4x_depth_dist, _ = self.decoder_depth2(final_feature_depth)
 
-        predictions_1x_semseg = F.interpolate(predictions_4x_semseg, size=input_resolution, mode='bilinear', align_corners=False)
-        predictions_1x_depth = F.interpolate(predictions_4x_depth, size=input_resolution, mode='bilinear', align_corners=False)
+        predictions_1x_semseg_dist = F.interpolate(predictions_4x_semseg_dist, size=input_resolution, mode='bilinear', align_corners=False)
+        predictions_1x_depth_dist = F.interpolate(predictions_4x_depth_dist, size=input_resolution, mode='bilinear', align_corners=False)
 
         out = {}
         offset = 0
 
-        out['semseg'] =  predictions_1x_semseg
-        out['depth'] =  predictions_1x_depth
+        out['semseg'] =  [predictions_1x_semseg,predictions_1x_semseg_dist]
+        out['depth'] =  [predictions_1x_depth,predictions_1x_depth_dist]
             
         return out

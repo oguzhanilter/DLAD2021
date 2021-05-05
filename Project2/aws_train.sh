@@ -24,7 +24,7 @@ cd /home/ubuntu/code/
 python -m mtl.scripts.train \
   --log_dir /home/ubuntu/results/ \
   --dataset_root /home/ubuntu/miniscapes/ \
-  --name test_2 \
+  --name test_3 \
   --optimizer sgd \
   --optimizer_lr 0.05 \
   --num_epochs 16 \
