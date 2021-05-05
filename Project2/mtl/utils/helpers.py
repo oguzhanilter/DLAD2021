@@ -16,6 +16,7 @@ def resolve_model_class(name):
     return {
         'deeplabv3p': ModelDeepLabV3Plus,
         'deeplabv3branched': ModelDeepLabV3Branched,
+        'deeplabv3distillation': ModelDeepLabV3Distillation,
     }[name]
 
 

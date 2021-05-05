@@ -31,7 +31,7 @@ python -m mtl.scripts.train \
   --batch_size 4 \
   --loss_weight_semseg 0.5 \
   --loss_weight_depth 0.5 \
-  --model_name deeplabv3branched
+  --model_name deeplabv3distillation
 
 
   # ... you can pass further arguments as specified in utils/config.py

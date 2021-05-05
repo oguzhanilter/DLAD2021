@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from mtl.models.model_parts import Encoder, get_encoder_channel_counts, ASPP, DecoderDeeplabV3p, SelfAttention
 
 
-class ModelDeepLabV3Branched(torch.nn.Module):
+class ModelDeepLabV3Distillation(torch.nn.Module):
     def __init__(self, cfg, outputs_desc):
         super().__init__()
         self.outputs_desc = outputs_desc
