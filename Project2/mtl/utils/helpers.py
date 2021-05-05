@@ -4,7 +4,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from mtl.datasets.dataset_miniscapes import DatasetMiniscapes
 from mtl.models.model_deeplab_v3_plus import ModelDeepLabV3Plus
 from mtl.models.model_deeplab_v3_branched import ModelDeepLabV3Branched
-
+from mtl.models.model_deeplab_v3_distillation import ModelDeepLabV3Distillation
 
 def resolve_dataset_class(name):
     return {
