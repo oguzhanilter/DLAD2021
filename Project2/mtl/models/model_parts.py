@@ -120,7 +120,7 @@ class Encoder(torch.nn.Module):
 
 class DecoderDeeplabV3pDistilled(torch.nn.Module):
     def __init__(self, num_input_ch, num_out_ch):
-        super(DecoderDeeplabV3p, self).__init__()
+        super(DecoderDeeplabV3pDistilled, self).__init__()
 
         
         self.last_conv2 = torch.nn.Sequential(torch.nn.Conv2d(num_input_ch, 256, kernel_size=3, stride=1, padding=1, bias=False),
@@ -162,7 +162,7 @@ class DecoderDeeplabV3p(torch.nn.Module):
                                        torch.nn.ReLU(),
                                        torch.nn.Conv2d(256, num_out_ch, kernel_size=1, stride=1))
 
-    def forward(self, features_bottleneck, features_skip_4x = None, skip_connection = False):
+    def forward(self, features_bottleneck, features_skip_4x = None):
         """
         DeepLabV3+ style decoder
         :param features_bottleneck: bottleneck features of scale > 4
@@ -176,21 +176,18 @@ class DecoderDeeplabV3p(torch.nn.Module):
         # )
         # predictions_4x = self.features_to_predictions(features_4x)
         
-        if(skip_connection):
-            features_skip_4x = self.conv1(features_skip_4x)
-            features_skip_4x = self.bn1(features_skip_4x)
-            features_skip_4x = self.relu(features_skip_4x)
+    
+        features_skip_4x = self.conv1(features_skip_4x)
+        features_skip_4x = self.bn1(features_skip_4x)
+        features_skip_4x = self.relu(features_skip_4x)
 
 
-            features_bottleneck = F.interpolate(features_bottleneck, size=features_skip_4x.size()[2:], mode='bilinear', align_corners=False)
-            features_4x = torch.cat((features_bottleneck, features_skip_4x), dim=1)
-            # predictions_4x = self.last_conv1(features_4x)
-            predictions_4x = self.last_conv2(features_4x)
+        features_bottleneck = F.interpolate(features_bottleneck, size=features_skip_4x.size()[2:], mode='bilinear', align_corners=False)
+        features_4x = torch.cat((features_bottleneck, features_skip_4x), dim=1)
+        # predictions_4x = self.last_conv1(features_4x)
+        predictions_4x = self.last_conv2(features_4x)
 
-            return predictions_4x, features_4x
-        else:
-            predictions_4x = self.last_conv1(features_bottleneck)
-            return predictions_4x, _
+        return predictions_4x, features_4x
 
 
 class ASPPpart(torch.nn.Sequential):

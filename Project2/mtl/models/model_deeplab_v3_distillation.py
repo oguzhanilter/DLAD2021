@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from mtl.models.model_parts import Encoder, get_encoder_channel_counts, ASPP, DecoderDeeplabV3p, SelfAttention
+from mtl.models.model_parts import Encoder, get_encoder_channel_counts, ASPP, DecoderDeeplabV3p,DecoderDeeplabV3pDistilled, SelfAttention
 
 
 class ModelDeepLabV3Distillation(torch.nn.Module):
@@ -32,11 +32,11 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
         self.aspp_semseg    = ASPP(ch_out_encoder_bottleneck, 256)
         self.aspp_depth     = ASPP(ch_out_encoder_bottleneck, 256)
 
-        self.decoder_semseg = DecoderDeeplabV3p(256, ch_out_encoder_4x, ch_out_semseg)
-        self.decoder_depth  = DecoderDeeplabV3p(256, ch_out_encoder_4x, ch_out_depth)
+        self.decoder_semseg = DecoderDeeplabV3p(256, ch_out_encoder_4x, ch_out_semseg,48)
+        self.decoder_depth  = DecoderDeeplabV3p(256, ch_out_encoder_4x, ch_out_depth,48)
 
-        self.sa_semseg      = SelfAttention(ch_out_encoder_4x, 256 + 48)
-        self.sa_depth       = SelfAttention(ch_out_encoder_4x, 256 + 48)
+        self.sa_semseg      = SelfAttention(256 + 48, 256 + 48)
+        self.sa_depth       = SelfAttention(256 + 48, 256 + 48)
 
         self.decoder2_semseg= DecoderDeeplabV3pDistilled(256 + 48, ch_out_semseg)
         self.decoder2_depth = DecoderDeeplabV3pDistilled(256 + 48, ch_out_depth)
@@ -72,8 +72,8 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
         final_feature_semseg = features_semseg + sa_out_depth
         final_feature_depth = features_depth + sa_out_semseg
 
-        predictions_4x_semseg_dist , _ = self.decoder_semseg2(final_feature_semseg)
-        predictions_4x_depth_dist, _ = self.decoder_depth2(final_feature_depth)
+        predictions_4x_semseg_dist = self.decoder2_semseg(final_feature_semseg)
+        predictions_4x_depth_dist = self.decoder2_depth(final_feature_depth)
 
         predictions_1x_semseg_dist = F.interpolate(predictions_4x_semseg_dist, size=input_resolution, mode='bilinear', align_corners=False)
         predictions_1x_depth_dist = F.interpolate(predictions_4x_depth_dist, size=input_resolution, mode='bilinear', align_corners=False)
