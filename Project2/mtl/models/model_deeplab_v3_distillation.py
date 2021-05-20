@@ -23,12 +23,6 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
 
         ch_out_encoder_bottleneck, ch_out_encoder_4x = get_encoder_channel_counts(cfg.model_encoder_name)
 
-        # self.aspps = {}
-        # self.decoders = {}
-        # for task, num_ch in self.outputs_desc.items():
-        #     self.aspps[task] = ASPP(ch_out_encoder_bottleneck, 256)
-        #     self.decoders[task] = DecoderDeeplabV3p(256, ch_out_encoder_4x, num_ch)
-
         self.aspp_semseg    = ASPP(ch_out_encoder_bottleneck, 256)
         self.aspp_depth     = ASPP(ch_out_encoder_bottleneck, 256)
 
@@ -52,10 +46,6 @@ class ModelDeepLabV3Distillation(torch.nn.Module):
 
         lowest_scale = max(features.keys())
         features_lowest = features[lowest_scale]
-
-        # features_tasks = self.aspp(features_lowest)
-        # predictions_4x, _ = self.decoder(features_tasks, features[4])
-        # predictions_1x = F.interpolate(predictions_4x, size=input_resolution, mode='bilinear', align_corners=False)
 
         features_tasks_semseg = self.aspp_semseg(features_lowest)
         features_tasks_depth = self.aspp_depth(features_lowest)
