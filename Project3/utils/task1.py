@@ -2,7 +2,7 @@ import numpy as np
 from shapely.geometry import MultiPoint
 import time
 
-from scipy.spatial import ConvexHull
+# from scipy.spatial import ConvexHull
 
 
 # Adapted from 
@@ -156,8 +156,8 @@ def convex_hull_intersection(p1, p2):
     """
     inter_p = polygon_clip(p1,p2)
     if inter_p is not None:
-        #hull_inter_area = MultiPoint(inter_p).convex_hull.area
-        hull_inter_area = ConvexHull(inter_p).volume
+        hull_inter_area = MultiPoint(inter_p).convex_hull.area
+        #hull_inter_area = ConvexHull(inter_p).volume
         return inter_p, hull_inter_area
     else:
         return None, 0.0  
@@ -238,7 +238,7 @@ def compute_recall(pred, target, threshold):
     #print(pred.shape)
     #print(target.shape)
     iou = get_iou(pred, target)
-    print(iou)
+    # print(iou)
     Exceed_threshold = iou >= threshold
     # TP = len(np.argwhere(Exceed_threshold))
     TP = np.count_nonzero(np.sum(Exceed_threshold, axis=0))
