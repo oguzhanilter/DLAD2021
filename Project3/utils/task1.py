@@ -1,6 +1,8 @@
 import numpy as np
 from shapely.geometry import MultiPoint
+import time
 
+from scipy.spatial import ConvexHull
 
 
 # Adapted from 
@@ -15,6 +17,60 @@ def rot_matrix(t):
                     [-s, 0,  c]])
 
 
+def object_box_points(objects):
+    """ Calculates edges of the 3D boxes for given object location and dimensions
+
+    Args:
+        xy: contains a list of lists with 16 elements for each object
+
+    """   
+
+    number_of_objects = len(objects)
+    box_edges = np.ones((4, 8*number_of_objects))
+
+    obj_edges = np.ones((3, 8))
+    
+    # This order is important. This order is used in visualization part 
+    # to decide which points have edge between them.
+
+    x1 = [0,1,2,3]
+    x2 = [4,5,6,7]
+    z1 = [0,2,4,6]
+    z2 = [1,3,5,7]
+    y1 = [0,1,4,5]
+    y2 = [2,3,6,7]
+
+    for i in range(number_of_objects):
+
+        ty              = objects[i][14]
+        object_dim      = [objects[i][8], objects[i][9], objects[i][10]] #  height, width, length 
+        object_center   = [objects[i][11], objects[i][12], objects[i][13]]
+        
+        Ry = np.array([[np.cos(ty), 0, np.sin(ty)], [0, 1, 0], [-np.sin(ty), 0, np.cos(ty)]])
+
+        # Define edges as if the object is at the origin
+        obj_edges[0,x1] = - object_dim[2]/2 
+        obj_edges[0,x2] = object_dim[2]/2 
+
+        obj_edges[1,y1] = 0
+        obj_edges[1,y2] = - object_dim[0]
+
+        obj_edges[2,z1] = object_dim[1]/2
+        obj_edges[2,z2] = - object_dim[1]/2
+
+        # Rotate the edges
+        obj_edges = np.dot(Ry, obj_edges)
+        
+        # Shift the center of the object true position
+        obj_edges[0,:] += object_center[0]
+        obj_edges[1,:] += object_center[1]
+        obj_edges[2,:] += object_center[2]   
+
+        box_edges[0:3, 8*i : 8*i+8 ] = obj_edges
+
+    return box_edges
+
+
 def label2corners(label):
     '''
     Task 1
@@ -26,6 +82,7 @@ def label2corners(label):
     N = label.shape[0]
     corners = np.empty((N,8,3))
 
+    i = 0
     for bb in label:
         R = rot_matrix(bb[6])
         h,w,l = bb[3:6]
@@ -37,6 +94,8 @@ def label2corners(label):
         corners_3d[1,:] = corners_3d[1,:] + bb[1]
         corners_3d[2,:] = corners_3d[2,:] + bb[2]
         corners_3d = np.transpose(corners_3d)
+        corners[i,:,:] = corners_3d
+        i += 1
 
     return corners
 
@@ -97,7 +156,8 @@ def convex_hull_intersection(p1, p2):
     """
     inter_p = polygon_clip(p1,p2)
     if inter_p is not None:
-        hull_inter_area = MultiPoint(inter_p).convex_hull.area
+        #hull_inter_area = MultiPoint(inter_p).convex_hull.area
+        hull_inter_area = ConvexHull(inter_p).volume
         return inter_p, hull_inter_area
     else:
         return None, 0.0  
@@ -123,10 +183,18 @@ def get_iou(pred, target):
     N = pred.shape[0]
     M = target.shape[0]
 
+
     pred_corners = label2corners(pred)
     target_corners = label2corners(target)
 
-    iou = np.empty((N,M))
+    #pred_corners2 = object_box_points(pred)
+
+    #print(pred_corners)
+    #print(pred_corners2 - pred_corners)
+
+    #time.sleep(10)
+
+    iou = np.empty([N,M])
     
     for p in range(N):
         for t in range(M):
@@ -136,8 +204,10 @@ def get_iou(pred, target):
             rect1 = [(corners_pred[i,0], corners_pred[i,2]) for i in range(3,-1,-1)]
             rect2 = [(corners_target[i,0], corners_target[i,2]) for i in range(3,-1,-1)] 
 
-            area1 = poly_area(np.array(rect1)[:,0], np.array(rect1)[:,1])
-            area2 = poly_area(np.array(rect2)[:,0], np.array(rect2)[:,1])
+
+
+            # area1 = poly_area(np.array(rect1)[:,0], np.array(rect1)[:,1])
+            # area2 = poly_area(np.array(rect2)[:,0], np.array(rect2)[:,1])
 
             inter, inter_area = convex_hull_intersection(rect1, rect2)
 
@@ -165,10 +235,15 @@ def compute_recall(pred, target, threshold):
     '''
 
     M = target.shape[0]
-
+    #print(pred.shape)
+    #print(target.shape)
     iou = get_iou(pred, target)
+    print(iou)
     Exceed_threshold = iou >= threshold
-    TP = len(np.argwhere(Exceed_threshold))
+    # TP = len(np.argwhere(Exceed_threshold))
+    TP = np.count_nonzero(np.sum(Exceed_threshold, axis=0))
     FN = M -  np.count_nonzero(np.sum(Exceed_threshold, axis=0))
+
+    #time.sleep(10)
 
     return TP / (TP + FN)
