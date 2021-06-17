@@ -87,6 +87,9 @@ def label2corners(label):
         R = rot_matrix(bb[6])
         h,w,l = bb[3:6]
         x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2]
+
+
+        # TODO: SHOULD NOT IT BE -h ???? 
         y_corners = [h,h,h,h,0,0,0,0]
         z_corners = [w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2,w/2]
         corners_3d = np.dot(R, np.vstack([x_corners,y_corners,z_corners]))

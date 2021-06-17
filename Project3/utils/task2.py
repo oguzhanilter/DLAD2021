@@ -3,6 +3,7 @@ from typing import OrderedDict
 import numpy as np
 from numpy.core.numeric import indices
 
+
 def rot_matrix(t):
     c = np.cos(t)
     s = np.sin(t)
@@ -26,13 +27,16 @@ def label2corners(label, delta):
     for bb in label:
         R = rot_matrix(bb[6])
         h,w,l = bb[3:6]
-
+    
         h += delta
         w += 2*delta
         l += 2*delta
 
+
+        # TODO: WHY here -h but not in task 1 !!!! 
+
         x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2]
-        y_corners = [h,h,h,h,-1,-1,-1,-1]
+        y_corners = [-h,-h,-h,-h,0,0,0,0]
         z_corners = [w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2,w/2]
         corners_3d = np.dot(R, np.vstack([x_corners,y_corners,z_corners]))
         corners_3d[0,:] = corners_3d[0,:] + bb[0]
@@ -89,23 +93,27 @@ def roi_pool(pred, xyz, feat, config):
     M = config['max_points']
     C = feat.shape[1]
 
+    print(pred.shape)
+
     valid_pred = np.empty((0,7))
     pooled_xyz = np.empty((0,M,3))
     pooled_feat = np.empty((0,M,C))
 
     pred_corners = label2corners(pred, config['delta'])
+
     
     for ind in range(N):
 
         corners = pred_corners[ind]
 
-        x_min, x_max = np.min(corners[0,:]), np.max(corners[0,:])
-        y_min, y_max = np.min(corners[1,:]), np.max(corners[1,:])
-        z_min, z_max = np.min(corners[2,:]), np.max(corners[2,:])
+        x_min, x_max = np.min(corners[:,0]), np.max(corners[:,0])
+        y_min, y_max = np.min(corners[:,1]), np.max(corners[:,1])
+        z_min, z_max = np.min(corners[:,2]), np.max(corners[:,2])
 
         indices = np.argwhere((xyz[:,0]>=x_min) & (xyz[:,0]<=x_max) &
                               (xyz[:,1]>=y_min) & (xyz[:,1]<=y_max) &
                               (xyz[:,2]>=z_min) & (xyz[:,2]<=z_max))
+
 
         if len(indices) == 0:
             continue
