@@ -33,4 +33,18 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
         config['num_fg_sample'] maximum allowed number of foreground samples
         config['bg_hard_ratio'] background hard difficulty ratio (#hard samples/ #background samples)
     '''
-    pass
+    
+    iou_matrix = get_iou(pred, target)
+
+    max_iou_indices = np.argmax(iou_matrix, axis=1)
+    max_iou = iou_matrix[:,max_iou_indices]
+
+    if train:
+    
+        asd = 10
+    
+    else: # If training false return everything -> no sampling
+        assigned_targets = target[max_iou_indices]
+        iou = max_iou
+
+    return assigned_targets, xyz, feat, iou

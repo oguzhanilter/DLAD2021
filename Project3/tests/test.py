@@ -74,9 +74,6 @@ class CheckTest():
 			print('duration [ms]:  {:.1f}/{:.1f}'.format(duration*1000, recorded_duration*1000))
 		# Check results
 		if not warmup:
-			print(valid_pred.shape)
-			print("----")
-			print(recorded_valid_pred.shape)
 			self.display_test_result(
 				(valid_pred==recorded_valid_pred).all(),
 				duration > DURATION_THRESHOLD*recorded_duration

@@ -2,6 +2,7 @@ from os import replace
 from typing import OrderedDict
 import numpy as np
 from numpy.core.numeric import indices
+import time
 
 
 def rot_matrix(t):
@@ -93,27 +94,27 @@ def roi_pool(pred, xyz, feat, config):
     M = config['max_points']
     C = feat.shape[1]
 
-    print(pred.shape)
 
     valid_pred = np.empty((0,7))
     pooled_xyz = np.empty((0,M,3))
     pooled_feat = np.empty((0,M,C))
 
+    s = time.time()
     pred_corners = label2corners(pred, config['delta'])
-
+    print(time.time() - s)
     
     for ind in range(N):
 
-        corners = pred_corners[ind]
-
-        x_min, x_max = np.min(corners[:,0]), np.max(corners[:,0])
-        y_min, y_max = np.min(corners[:,1]), np.max(corners[:,1])
-        z_min, z_max = np.min(corners[:,2]), np.max(corners[:,2])
+        #corners = pred_corners[ind]
+        s = time.time()
+        x_min, x_max = np.min(pred_corners[ind][:,0]), np.max(pred_corners[ind][:,0])
+        y_min, y_max = np.min(pred_corners[ind][:,1]), np.max(pred_corners[ind][:,1])
+        z_min, z_max = np.min(pred_corners[ind][:,2]), np.max(pred_corners[ind][:,2])
 
         indices = np.argwhere((xyz[:,0]>=x_min) & (xyz[:,0]<=x_max) &
                               (xyz[:,1]>=y_min) & (xyz[:,1]<=y_max) &
                               (xyz[:,2]>=z_min) & (xyz[:,2]<=z_max))
-
+        print(time.time() - s)
 
         if len(indices) == 0:
             continue
@@ -121,13 +122,14 @@ def roi_pool(pred, xyz, feat, config):
         indices  = indices.reshape(len(indices))
 
         valid_pred = np.append(valid_pred, [pred[ind]], axis=0)
-        
+
+        s = time.time()
         indices = create_set(indices, config['max_points'])
+        print(time.time() - s)
 
-        inlier_points = xyz[indices]
-        inlier_feat   = feat[indices]
-
-        pooled_xyz  = np.append(pooled_xyz, [inlier_points], axis=0 )
-        pooled_feat = np.append(pooled_feat, [inlier_feat], axis=0 )
-
+        s = time.time()
+        pooled_xyz  = np.append(pooled_xyz, [xyz[indices]], axis=0 )
+        pooled_feat = np.append(pooled_feat, [feat[indices]], axis=0 )
+        print(time.time() - s)
+   
     return valid_pred, pooled_xyz, pooled_feat
