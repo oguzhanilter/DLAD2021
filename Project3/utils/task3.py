@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 from .task1 import get_iou
 
@@ -40,9 +41,108 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
     max_iou = iou_matrix[:,max_iou_indices]
 
     if train:
+        
+        foreground_ind = np.argwhere(max_iou >= config['t_fg_lb'])
+        hard_background_ind = np.argwhere( (max_iou >= config['t_bg_hard_lb']) & (max_iou < config['t_bg_up']) )
+        easy_background_ind = np.argwhere( (max_iou < config['t_bg_hard_lb']) )
+
+        len_fore = len(foreground_ind)
+        len_hard = len(hard_background_ind)
+        len_easy = len(easy_background_ind)
+
+
+        if len_hard + len_easy == 0:
+
+            if len_fore >= 64:
+                indices = np.random.choice(foreground_ind, 64, replace=False)
+            
+            elif len_fore < 64:
+                extend = np.random.choice(foreground_ind, 64 - len_fore, replace=True)
+                indices = np.append(foreground_ind, extend)
+        
+        elif len_fore == 0:
+            if len_hard == 0:
+                if len_easy >= 64:
+                    indices = np.random.choice(easy_background_ind, 64, replace=False)
+            
+                elif len_easy < 64:
+                    extend = np.random.choice(easy_background_ind, 64 - len_easy, replace=True)
+                    indices = np.append(easy_background_ind, extend)
+
+            if len_easy == 0:
+                if len_hard >= 64:
+                    indices = np.random.choice(hard_background_ind, 64, replace=False)
+            
+                elif len_hard < 64:
+                    extend = np.random.choice(hard_background_ind, 64 - len_hard, replace=True)
+                    indices = np.append(hard_background_ind, extend)
+
+            else:
+                if len_hard >= 32:
+                    indices1 = np.random.choice(hard_background_ind, 32, replace=False)
+            
+                elif len_hard < 32:
+                    extend = np.random.choice(hard_background_ind, 32 - len_hard, replace=True)
+                    indices1 = np.append(hard_background_ind, extend)
+                
+                if len_easy >= 32:
+                    indices2 = np.random.choice(easy_background_ind, 32, replace=False)
+            
+                elif len_easy < 32:
+                    extend = np.random.choice(easy_background_ind, 32 - len_easy, replace=True)
+                    indices2 = np.append(easy_background_ind, extend)
+
+                indices = np.append(indices1,indices2)
+
+        else:
+
+            if len_fore >= 32:
+                indices1 = np.random.choice(foreground_ind, 32, replace=False)
     
-        asd = 10
-    
+            elif len_fore < 32:
+                if len_hard == 0:
+                    if len_easy >= 64-len_fore:
+                        indices2 = np.random.choice(easy_background_ind, 64-len_fore, replace=False)
+                
+                    elif len_easy < 64-len_fore:
+                        extend = np.random.choice(easy_background_ind, 64-len_fore - len_easy, replace=True)
+                        indices2 = np.append(easy_background_ind, extend)
+
+                if len_easy == 0:
+                    if len_hard >= 64-len_fore:
+                        indices2 = np.random.choice(hard_background_ind, 64-len_fore, replace=False)
+                
+                    elif len_hard < 64:
+                        extend = np.random.choice(hard_background_ind, 64-len_fore - len_hard, replace=True)
+                        indices2 = np.append(hard_background_ind, extend)
+
+                else:
+                    num_hard = np.ceil((64-len_fore)/2)
+                    num_easy = 64 - len_fore - num_hard
+                    if len_hard >= num_hard:
+                        indices3 = np.random.choice(hard_background_ind, num_hard, replace=False)
+                
+                    elif len_hard < num_hard:
+                        extend = np.random.choice(hard_background_ind, num_hard - len_hard, replace=True)
+                        indices3 = np.append(hard_background_ind, extend)
+                    
+                    if len_easy >= num_easy:
+                        indices4 = np.random.choice(easy_background_ind, num_easy, replace=False)
+                
+                    elif len_easy < num_easy:
+                        extend = np.random.choice(easy_background_ind, num_easy - len_easy, replace=True)
+                        indices4 = np.append(easy_background_ind, extend)
+
+                    indices2 = np.append(indices3,indices4)
+
+            indices = np.append(indices1,indices2)    
+
+        assigned_targets = target[indices]
+        iou = max_iou[indices]
+        xyz = xyz[indices]
+        feat = feat[indices]
+
+
     else: # If training false return everything -> no sampling
         assigned_targets = target[max_iou_indices]
         iou = max_iou
