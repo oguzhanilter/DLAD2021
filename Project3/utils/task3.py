@@ -50,7 +50,7 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
         len_hard = len(hard_background_ind)
         len_easy = len(easy_background_ind)
 
-
+        # if only foreground
         if len_hard + len_easy == 0:
 
             if len_fore >= 64:
@@ -59,7 +59,8 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
             elif len_fore < 64:
                 extend = np.random.choice(foreground_ind, 64 - len_fore, replace=True)
                 indices = np.append(foreground_ind, extend)
-        
+
+        # if only background
         elif len_fore == 0:
             if len_hard == 0:
                 if len_easy >= 64:
@@ -94,6 +95,7 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
 
                 indices = np.append(indices1,indices2)
 
+        # Both
         else:
 
             if len_fore >= 32:
