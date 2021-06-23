@@ -99,14 +99,14 @@ def roi_pool(pred, xyz, feat, config):
     pooled_xyz = np.empty((0,M,3))
     pooled_feat = np.empty((0,M,C))
 
-    s = time.time()
+    #s = time.time()
     pred_corners = label2corners(pred, config['delta'])
-    print(time.time() - s)
+    #print(time.time() - s)
     
     for ind in range(N):
 
         #corners = pred_corners[ind]
-        s = time.time()
+        #s = time.time()
         x_min, x_max = np.min(pred_corners[ind][:,0]), np.max(pred_corners[ind][:,0])
         y_min, y_max = np.min(pred_corners[ind][:,1]), np.max(pred_corners[ind][:,1])
         z_min, z_max = np.min(pred_corners[ind][:,2]), np.max(pred_corners[ind][:,2])
@@ -114,7 +114,7 @@ def roi_pool(pred, xyz, feat, config):
         indices = np.argwhere((xyz[:,0]>=x_min) & (xyz[:,0]<=x_max) &
                               (xyz[:,1]>=y_min) & (xyz[:,1]<=y_max) &
                               (xyz[:,2]>=z_min) & (xyz[:,2]<=z_max))
-        print(time.time() - s)
+        #print(time.time() - s)
 
         if len(indices) == 0:
             continue
@@ -123,13 +123,13 @@ def roi_pool(pred, xyz, feat, config):
 
         valid_pred = np.append(valid_pred, [pred[ind]], axis=0)
 
-        s = time.time()
+        #s = time.time()
         indices = create_set(indices, config['max_points'])
-        print(time.time() - s)
+        #print(time.time() - s)
 
-        s = time.time()
+        #s = time.time()
         pooled_xyz  = np.append(pooled_xyz, [xyz[indices]], axis=0 )
         pooled_feat = np.append(pooled_feat, [feat[indices]], axis=0 )
-        print(time.time() - s)
+        #print(time.time() - s)
    
     return valid_pred, pooled_xyz, pooled_feat

@@ -38,7 +38,8 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
     iou_matrix = get_iou(pred, target)
 
     max_iou_indices = np.argmax(iou_matrix, axis=1)
-    max_iou = iou_matrix[:,max_iou_indices]
+    max_iou = np.take_along_axis(iou_matrix, max_iou_indices[:,None], axis=1)
+    max_iou = max_iou.reshape(len(max_iou))
 
     if train:
         
@@ -49,6 +50,10 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
         len_fore = len(foreground_ind)
         len_hard = len(hard_background_ind)
         len_easy = len(easy_background_ind)
+
+        foreground_ind = foreground_ind.reshape(len_fore)
+        hard_background_ind = hard_background_ind.reshape(len_hard)
+        easy_background_ind = easy_background_ind.reshape(len_easy)
 
         # if only foreground
         if len_hard + len_easy == 0:
@@ -102,6 +107,9 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
                 indices1 = np.random.choice(foreground_ind, 32, replace=False)
     
             elif len_fore < 32:
+                
+                indices1 = foreground_ind
+
                 if len_hard == 0:
                     if len_easy >= 64-len_fore:
                         indices2 = np.random.choice(easy_background_ind, 64-len_fore, replace=False)
@@ -119,7 +127,7 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
                         indices2 = np.append(hard_background_ind, extend)
 
                 else:
-                    num_hard = np.ceil((64-len_fore)/2)
+                    num_hard = int(np.ceil((64-len_fore)/2))
                     num_easy = 64 - len_fore - num_hard
                     if len_hard >= num_hard:
                         indices3 = np.random.choice(hard_background_ind, num_hard, replace=False)
@@ -139,7 +147,7 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
 
             indices = np.append(indices1,indices2)    
 
-        assigned_targets = target[indices]
+        assigned_targets = target[max_iou_indices[indices]]
         iou = max_iou[indices]
         xyz = xyz[indices]
         feat = feat[indices]

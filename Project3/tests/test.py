@@ -60,16 +60,23 @@ class CheckTest():
 
 	def task2(self, warmup=False):
 		from utils.task2 import roi_pool
+		from utils.task3 import sample_proposals
 		# Load recordings of first data point
 		recorded_valid_pred = np.load(os.path.join(self.recordings_dir, 'task2_valid_pred.npy'))
 		# ROI pool for first data point
 		recorded_duration = np.load(os.path.join(self.recordings_dir, 'task2_duration.npy'))
 		start = timer()
-		valid_pred, _, _ = roi_pool(pred=self.ds.get_data(0, 'detections'),
+		valid_pred, pooled_xyz, pooled_feat = roi_pool(pred=self.ds.get_data(0, 'detections'),
 									xyz=self.ds.get_data(0, 'xyz'),
 									feat=self.ds.get_data(0, 'features'),
 									config=self.config['data'])
 		duration = timer() - start
+
+		a,b,c,d = sample_proposals(valid_pred, self.ds.get_data(0, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=True)
+		print(a.shape)
+		print(b.shape)
+		print(c.shape)
+		print(d.shape)
 		if not warmup:
 			print('duration [ms]:  {:.1f}/{:.1f}'.format(duration*1000, recorded_duration*1000))
 		# Check results
