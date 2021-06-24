@@ -96,7 +96,10 @@ class CheckTest():
 		loss = reg_loss(pred=torch.load(os.path.join(self.recordings_dir, 'task4_reg_pred.pt')),
 						target=torch.load(os.path.join(self.recordings_dir, 'task4_reg_target.pt')),
 						iou=torch.load(os.path.join(self.recordings_dir, 'task4_reg_iou.pt')))
+
 		recorded_loss = torch.load(os.path.join(self.recordings_dir, 'task4_reg_loss.pt'))
+		print(loss)
+		print(recorded_loss)
 		self.display_test_result(loss == recorded_loss)
 
 		# Classification loss
@@ -105,6 +108,9 @@ class CheckTest():
 		loss = cls_loss(pred=torch.load(os.path.join(self.recordings_dir, 'task4_cls_pred.pt')),
 						iou=torch.load(os.path.join(self.recordings_dir, 'task4_cls_iou.pt')))
 		recorded_loss = torch.load(os.path.join(self.recordings_dir, 'task4_cls_loss.pt'))
+
+		print(loss)
+		print(recorded_loss)
 		self.display_test_result(loss == recorded_loss)
 
 	def task5(self):

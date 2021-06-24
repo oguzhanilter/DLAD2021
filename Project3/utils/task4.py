@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import numpy as np
+
 class RegressionLoss(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -16,13 +18,18 @@ class RegressionLoss(nn.Module):
         IoU ≥ 0.55 to determine positive samples and alter the RegressionLoss
         module such that only positive samples contribute to the loss.
         input
-            pred (N,7) predicted bounding boxes
+            pred (N,7) predicted bounding boxes (x,y,z,h,w,l,ry)
             target (N,7) target bounding boxes
             iou (N,) initial IoU of all paired proposal-targets
         useful config hyperparameters
             self.config['positive_reg_lb'] lower bound for positive samples
         '''
-        pass
+        scale = np.array([1,1,1,3,3,3,1])
+        indices = np.argwhere(iou >= self.config['positive_reg_lb'])
+        indices = indices.reshape(indices.shape[1])
+
+        return self.loss(pred[indices]*scale, target[indices]*scale)
+
 
 class ClassificationLoss(nn.Module):
     def __init__(self, config):
@@ -44,4 +51,21 @@ class ClassificationLoss(nn.Module):
             self.config['positive_cls_lb'] lower bound for positive samples
             self.config['negative_cls_ub'] upper bound for negative samples
         '''
-        pass
+        s = nn.Sigmoid()
+        
+        pos_indices = np.argwhere(iou >= self.config['positive_cls_lb'])
+        neg_indices = np.argwhere(iou <= self.config['negative_cls_ub'])
+
+        pos_indices = pos_indices.reshape(pos_indices.shape[1])
+        neg_indices = neg_indices.reshape(neg_indices.shape[1])
+
+        ones  = np.ones (len(pos_indices))
+        zeros = np.zeros(len(neg_indices))
+
+        predictions = torch.tensor(np.append(pred[pos_indices],pred[neg_indices]).astype(float))
+        labels      = torch.tensor(np.append(ones,zeros).astype(float))
+
+        return self.loss(predictions,labels)
+
+
+        
