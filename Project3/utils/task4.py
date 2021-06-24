@@ -24,9 +24,8 @@ class RegressionLoss(nn.Module):
         useful config hyperparameters
             self.config['positive_reg_lb'] lower bound for positive samples
         '''
-        # scale = np.array([1,1,1,3,3,3,1])
-        indices = np.argwhere(iou >= self.config['positive_reg_lb'])
-        indices = indices.reshape(indices.shape[1])
+
+        indices = iou >= self.config['positive_reg_lb']
 
         loss_trans  = self.loss(pred[indices][0:3], target[indices][0:3])
         loss_size   = self.loss(pred[indices][3:6], target[indices][3:6])
@@ -57,14 +56,11 @@ class ClassificationLoss(nn.Module):
         '''
         s = nn.Sigmoid()
         
-        pos_indices = np.argwhere(iou >= self.config['positive_cls_lb'])
-        neg_indices = np.argwhere(iou <= self.config['negative_cls_ub'])
+        pos_indices = iou >= self.config['positive_cls_lb']
+        neg_indices = iou <= self.config['negative_cls_ub']
 
-        pos_indices = pos_indices.reshape(pos_indices.shape[1])
-        neg_indices = neg_indices.reshape(neg_indices.shape[1])
-
-        ones  = np.ones (len(pos_indices))
-        zeros = np.zeros(len(neg_indices))
+        ones  = np.ones (np.argwhere(pos_indices).shape[1])
+        zeros = np.zeros(np.argwhere(neg_indices).shape[1])
 
         predictions = torch.tensor(np.append(pred[pos_indices],pred[neg_indices]).astype(float))
         labels      = torch.tensor(np.append(ones,zeros).astype(float))
