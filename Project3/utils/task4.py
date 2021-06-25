@@ -34,7 +34,6 @@ class RegressionLoss(nn.Module):
         # Rotation 
         loss_rot    = self.loss(pred[indices][6], target[indices][6])
 
-
         return loss_trans + 3*loss_size + loss_rot
 
 

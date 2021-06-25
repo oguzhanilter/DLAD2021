@@ -33,7 +33,6 @@ def label2corners(label, delta):
         w += 2*delta
         l += 2*delta
 
-
         # TODO: WHY here -h but not in task 1 !!!! 
 
         x_corners = [l/2,-l/2]
@@ -57,7 +56,7 @@ def create_set(indices, max_points):
         indices_ = np.random.choice(indices, max_points, replace=False)
     
     elif len_indices < max_points:
-        indices_ = np.zeros((max_points))
+        indices_ = np.empty((max_points))
         extend = np.random.choice(indices, max_points - len_indices, replace=True)
         indices_[:len_indices] = indices
         indices_[len_indices:] = extend
@@ -96,14 +95,11 @@ def roi_pool(pred, xyz, feat, config):
     M = config['max_points']
     C = feat.shape[1]
 
+    valid_pred = np.empty(( N,7))
+    pooled_xyz = np.empty(( N,M,3))
+    pooled_feat = np.empty(( N,M,C))
 
-    valid_pred = np.zeros(( N,7))
-    pooled_xyz = np.zeros(( N,M,3))
-    pooled_feat = np.zeros(( N,M,C))
-
-    s = time.time()
     pred_corners = label2corners(pred, config['delta'])
-    print(time.time() - s)
 
     i = 0
     for ind in range(N):
@@ -127,7 +123,5 @@ def roi_pool(pred, xyz, feat, config):
         pooled_feat[i] = feat[indices]
 
         i += 1
-
                
-
     return valid_pred[:i], pooled_xyz[:i], pooled_feat[:i]
