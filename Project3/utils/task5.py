@@ -49,5 +49,4 @@ def nms(pred, score, threshold):
         pred = np.delete(pred, indices,0)
         score = np.delete(score, indices,0)
 
-
     return s_f, c_f

@@ -73,6 +73,7 @@ class CheckTest():
 		if not warmup:
 			print('duration [ms]:  {:.1f}/{:.1f}'.format(duration*1000, recorded_duration*1000))
 		# Check results
+
 		if not warmup:
 			self.display_test_result(
 				(valid_pred==recorded_valid_pred).all(),

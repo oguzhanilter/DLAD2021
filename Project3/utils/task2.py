@@ -22,7 +22,7 @@ def label2corners(label, delta):
         corners (N,8,3) corner coordinates in the rectified reference frame
     '''
     N = label.shape[0]
-    corners = np.empty((N,8,3))
+    corners = np.empty((N,2,3))
 
     i = 0
     for bb in label:
@@ -36,9 +36,9 @@ def label2corners(label, delta):
 
         # TODO: WHY here -h but not in task 1 !!!! 
 
-        x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2]
-        y_corners = [-h,-h,-h,-h,0,0,0,0]
-        z_corners = [w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2,w/2]
+        x_corners = [l/2,-l/2]
+        y_corners = [1,-h]
+        z_corners = [w/2,-w/2]
         corners_3d = np.dot(R, np.vstack([x_corners,y_corners,z_corners]))
         corners_3d[0,:] = corners_3d[0,:] + bb[0]
         corners_3d[1,:] = corners_3d[1,:] + bb[1]
@@ -54,13 +54,15 @@ def create_set(indices, max_points):
     len_indices = len(indices)
 
     if len_indices > max_points:
-        indices = np.random.choice(indices, max_points, replace=False)
+        indices_ = np.random.choice(indices, max_points, replace=False)
     
     elif len_indices < max_points:
+        indices_ = np.zeros((max_points))
         extend = np.random.choice(indices, max_points - len_indices, replace=True)
-        indices = np.append(indices, extend)
+        indices_[:len_indices] = indices
+        indices_[len_indices:] = extend
 
-    return indices
+    return indices_.astype(int)
 
 
 def roi_pool(pred, xyz, feat, config):
@@ -95,18 +97,17 @@ def roi_pool(pred, xyz, feat, config):
     C = feat.shape[1]
 
 
-    valid_pred = np.empty((0,7))
-    pooled_xyz = np.empty((0,M,3))
-    pooled_feat = np.empty((0,M,C))
+    valid_pred = np.zeros(( N,7))
+    pooled_xyz = np.zeros(( N,M,3))
+    pooled_feat = np.zeros(( N,M,C))
 
-    #s = time.time()
+    s = time.time()
     pred_corners = label2corners(pred, config['delta'])
-    #print(time.time() - s)
-    
+    print(time.time() - s)
+
+    i = 0
     for ind in range(N):
 
-        #corners = pred_corners[ind]
-        #s = time.time()
         x_min, x_max = np.min(pred_corners[ind][:,0]), np.max(pred_corners[ind][:,0])
         y_min, y_max = np.min(pred_corners[ind][:,1]), np.max(pred_corners[ind][:,1])
         z_min, z_max = np.min(pred_corners[ind][:,2]), np.max(pred_corners[ind][:,2])
@@ -114,22 +115,19 @@ def roi_pool(pred, xyz, feat, config):
         indices = np.argwhere((xyz[:,0]>=x_min) & (xyz[:,0]<=x_max) &
                               (xyz[:,1]>=y_min) & (xyz[:,1]<=y_max) &
                               (xyz[:,2]>=z_min) & (xyz[:,2]<=z_max))
-        #print(time.time() - s)
 
         if len(indices) == 0:
             continue
 
-        indices  = indices.reshape(len(indices))
-
-        valid_pred = np.append(valid_pred, [pred[ind]], axis=0)
-
-        #s = time.time()
+        indices = indices.reshape(len(indices))
         indices = create_set(indices, config['max_points'])
-        #print(time.time() - s)
 
-        #s = time.time()
-        pooled_xyz  = np.append(pooled_xyz, [xyz[indices]], axis=0 )
-        pooled_feat = np.append(pooled_feat, [feat[indices]], axis=0 )
-        #print(time.time() - s)
-   
-    return valid_pred, pooled_xyz, pooled_feat
+        valid_pred[i] = pred[ind]
+        pooled_xyz[i] = xyz[indices]
+        pooled_feat[i] = feat[indices]
+
+        i += 1
+
+               
+
+    return valid_pred[:i], pooled_xyz[:i], pooled_feat[:i]
