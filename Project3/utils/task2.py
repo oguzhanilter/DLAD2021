@@ -105,9 +105,9 @@ def roi_pool(pred, xyz, feat, config):
     for ind in range(N):
         
         #s = time.time()
-        x_min, x_max = np.min(pred_corners[ind][:,0]), np.max(pred_corners[ind][:,0])
-        y_min, y_max = np.min(pred_corners[ind][:,1]), np.max(pred_corners[ind][:,1])
-        z_min, z_max = np.min(pred_corners[ind][:,2]), np.max(pred_corners[ind][:,2])
+        x_min, x_max = np.min(pred_corners[ind,:,0]), np.max(pred_corners[ind,:,0])
+        y_min, y_max = np.min(pred_corners[ind,:,1]), np.max(pred_corners[ind,:,1])
+        z_min, z_max = np.min(pred_corners[ind,:,2]), np.max(pred_corners[ind,:,2])
         #print(time.time()-s)
 
         #s = time.time()
@@ -134,7 +134,7 @@ def roi_pool(pred, xyz, feat, config):
         pooled_xyz[i] = xyz[indices]
         pooled_feat[i] = feat[indices]
         #print(time.time()-s)
-
+        break
         i += 1
                
     return valid_pred[:i], pooled_xyz[:i], pooled_feat[:i]

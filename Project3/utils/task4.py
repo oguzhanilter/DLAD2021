@@ -28,11 +28,11 @@ class RegressionLoss(nn.Module):
         indices = iou >= self.config['positive_reg_lb']
 
         # Translation
-        loss_trans  = self.loss(pred[indices][0:3], target[indices][0:3])
+        loss_trans  = self.loss(pred[indices, 0:3], target[indices, 0:3])
         # Size
-        loss_size   = self.loss(pred[indices][3:6], target[indices][3:6])
+        loss_size   = self.loss(pred[indices, 3:6], target[indices, 3:6])
         # Rotation 
-        loss_rot    = self.loss(pred[indices][6], target[indices][6])
+        loss_rot    = self.loss(pred[indices, 6], target[indices, 6])
 
         return loss_trans + 3*loss_size + loss_rot
 
@@ -61,8 +61,8 @@ class ClassificationLoss(nn.Module):
         pos_indices = iou >= self.config['positive_cls_lb']
         neg_indices = iou <= self.config['negative_cls_ub']
 
-        ones  = np.ones (np.argwhere(pos_indices).shape[1])
-        zeros = np.zeros(np.argwhere(neg_indices).shape[1])
+        ones  = np.ones (pos_indices.sum())
+        zeros = np.zeros(neg_indices.sum())
 
         predictions = torch.tensor(np.append(pred[pos_indices],pred[neg_indices]).astype(float))
         labels      = torch.tensor(np.append(ones,zeros))
