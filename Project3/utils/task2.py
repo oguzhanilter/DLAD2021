@@ -33,8 +33,6 @@ def label2corners(label, delta):
         w += 2*delta
         l += 2*delta
 
-        # TODO: WHY here -h but not in task 1 !!!! 
-
         x_corners = [l/2,-l/2]
         y_corners = [1,-h]
         z_corners = [w/2,-w/2]

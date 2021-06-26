@@ -88,8 +88,7 @@ def label2corners(label):
         h,w,l = bb[3:6]
         x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2]
 
-        # TODO: SHOULD NOT IT BE -h ???? 
-        y_corners = [h,h,h,h,0,0,0,0]
+        y_corners = [0,0,0,0,-h,-h,-h,-h]
 
 
         z_corners = [w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2,w/2]
