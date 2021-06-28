@@ -1,7 +1,7 @@
 {
   "MarketType": "spot",
   "SpotOptions": {
-    "MaxPrice": "1.5",
+    "MaxPrice": "2.1",
     "SpotInstanceType": "one-time"
   }
 }

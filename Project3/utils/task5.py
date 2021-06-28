@@ -25,8 +25,6 @@ def nms(pred, score, threshold):
         c_f = np.append(c_f, np.array([score[max_ind]]).reshape((1,1)),axis=0)
         score = np.delete(score, max_ind,0)
 
-        print(pred.shape)
-
         s_f = np.append(s_f, np.array([pred[max_ind]]).reshape((1,7)), axis=0)
 
         pred = np.delete(pred, max_ind,0) 

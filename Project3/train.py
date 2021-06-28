@@ -54,7 +54,7 @@ class LitModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, assinged_target, iou = batch['input'], batch['assinged_target'], batch['iou']
-        pred_box, pred_class = self(x)
+        pred_box, pred_class = self(x.to(torch.float32))
 
         loss = self.reg_loss(pred_box, assinged_target, iou) \
                + self.cls_loss(pred_class, iou)

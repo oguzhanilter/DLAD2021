@@ -66,7 +66,7 @@ class CheckTest():
 		from utils.task2 import roi_pool
 		from utils.task3 import sample_proposals
 
-		scene = 2
+		scene = 0
 		car = 0
 
 		# Load recordings of first data point
@@ -80,7 +80,7 @@ class CheckTest():
 									config=self.config['data'])
 		duration = timer() - start
 
-		# a,b,c,d = sample_proposals(valid_pred, self.ds.get_data(0, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=True)
+		a,b,c,d = sample_proposals(valid_pred, self.ds.get_data(0, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=False)
 		#print(valid_pred[car])
 
 		#vis = v.Visualizer()
@@ -99,8 +99,8 @@ class CheckTest():
 
 		#assigned_targets, xyz, feat, iou, indices= sample_proposals(valid_pred, self.ds.get_data(scene, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=True)
 
-		a = pooled_xyz[indices].reshape(-1, 3)
-		vis = v.Visualizer()
+		#a = pooled_xyz[indices].reshape(-1, 3)
+		#vis = v.Visualizer()
 		#vis.update(pooled_xyz[car] - valid_pred[car,0:3])
 		#vis.update_boxes(label2corners( np.array([valid_pred[car]])  )- valid_pred[car,0:3])
 		
@@ -109,11 +109,10 @@ class CheckTest():
 		#for i in range(valid_pred.shape[0]):
 		#vis.update(pooled_xyz)
 		# vis.update(self.ds.get_data(scene, 'xyz'))
-		vis.update(a)
-		vis.update_boxes(label2corners( valid_pred[indices]  ))
+		#vis.update(a)
+		#vis.update_boxes(label2corners( valid_pred[indices]  ))
 
-		vispy.app.run()
-
+		# vispy.app.run()
 
 		if not warmup:
 			print('duration [ms]:  {:.1f}/{:.1f}'.format(duration*1000, recorded_duration*1000))
