@@ -34,3 +34,12 @@ ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem 
 2021-06-28_09-30-12
 ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-54-161-96-130.compute-1.amazonaws.com
 
+2021-06-28_10-28-02
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-54-225-51-102.compute-1.amazonaws.com
+
+2021-06-28_10-53-05
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-236-87-81.compute-1.amazonaws.com
+
+2021-06-28_11-40-57
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-235-44-221.compute-1.amazonaws.com
+

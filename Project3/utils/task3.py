@@ -38,7 +38,6 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
 
     iou_matrix = get_iou(pred, target)
 
-
     max_iou_indices = np.argmax(iou_matrix, axis=1)
     max_iou = np.take_along_axis(iou_matrix, max_iou_indices[:,None], axis=1)
     max_iou = max_iou.reshape(len(max_iou))
@@ -78,7 +77,7 @@ def sample_proposals(pred, target, xyz, feat, config, train=False):
                     extend = np.random.choice(easy_background_ind, 64 - len_easy, replace=True)
                     indices = np.append(easy_background_ind, extend)
 
-            if len_easy == 0:
+            elif len_easy == 0:
                 if len_hard >= 64:
                     indices = np.random.choice(hard_background_ind, 64, replace=False)
             

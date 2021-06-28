@@ -61,11 +61,25 @@ class ClassificationLoss(nn.Module):
         pos_indices = iou >= self.config['positive_cls_lb']
         neg_indices = iou <= self.config['negative_cls_ub']
 
-        ones  = np.ones (pos_indices.sum())
-        zeros = np.zeros(neg_indices.sum())
+        len_pos_indices = pos_indices.sum()
+        len_neg_indices = neg_indices.sum()
 
-        predictions = torch.tensor(np.append(pred[pos_indices],pred[neg_indices]).astype(float))
-        labels      = torch.tensor(np.append(ones,zeros))
+        predictions = np.zeros((len_pos_indices+len_neg_indices))
+        labels = np.zeros(len_pos_indices+len_neg_indices)
+
+        predictions[:len_pos_indices] = pred[pos_indices].cpu().data.reshape(len_pos_indices)
+        predictions[len_pos_indices:] = pred[neg_indices].cpu().data.reshape(len_neg_indices)
+
+        labels[:len_pos_indices] = 1
+
+        predictions = torch.tensor(predictions)
+        labels = torch.tensor(labels)
+
+        #ones  = np.ones (pos_indices.sum())
+        #zeros = np.zeros(neg_indices.sum())
+
+        #predictions = torch.tensor(np.append(pred[pos_indices],pred[neg_indices]).astype(float))
+        #labels      = torch.tensor(np.append(ones,zeros))
 
         loss = self.loss(predictions,labels)
 
