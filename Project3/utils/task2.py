@@ -50,7 +50,7 @@ def create_set(indices, max_points):
 
     len_indices = len(indices)
 
-    if len_indices > max_points:
+    if len_indices >= max_points:
         indices_ = np.random.choice(indices, max_points, replace=False)
     
     elif len_indices < max_points:
@@ -102,37 +102,24 @@ def roi_pool(pred, xyz, feat, config):
     i = 0
     for ind in range(N):
         
-        #s = time.time()
         x_min, x_max = np.min(pred_corners[ind,:,0]), np.max(pred_corners[ind,:,0])
         y_min, y_max = np.min(pred_corners[ind,:,1]), np.max(pred_corners[ind,:,1])
         z_min, z_max = np.min(pred_corners[ind,:,2]), np.max(pred_corners[ind,:,2])
-        #print(time.time()-s)
 
-        #s = time.time()
         indices = np.argwhere((xyz[:,0]>=x_min) & (xyz[:,0]<=x_max) &
                               (xyz[:,1]>=y_min) & (xyz[:,1]<=y_max) &
                               (xyz[:,2]>=z_min) & (xyz[:,2]<=z_max))
-        #print(time.time()-s)
 
-        #s = time.time()
         if len(indices) == 0:
             continue
-        #print(time.time()-s)
 
-        #s = time.time()
         indices = indices.reshape(len(indices))
-        #print(time.time()-s)
-
-        #s = time.time()
         indices = create_set(indices, config['max_points'])
-        #print(time.time()-s)
 
-        #s = time.time()
         valid_pred[i] = pred[ind]
         pooled_xyz[i] = xyz[indices]
         pooled_feat[i] = feat[indices]
-        #print(time.time()-s)
-        break
+
         i += 1
                
     return valid_pred[:i], pooled_xyz[:i], pooled_feat[:i]

@@ -12,6 +12,10 @@ from timeit import default_timer as timer
 import numpy as np
 import torch
 
+import utils.dvis as v
+from utils.task1 import  label2corners
+import vispy
+
 from dataset import DatasetLoader
 
 parser = argparse.ArgumentParser(description='')
@@ -60,20 +64,60 @@ class CheckTest():
 
 	def task2(self, warmup=False):
 		from utils.task2 import roi_pool
+		from utils.task3 import sample_proposals
+
+		scene = 2
+		car = 0
+
 		# Load recordings of first data point
 		recorded_valid_pred = np.load(os.path.join(self.recordings_dir, 'task2_valid_pred.npy'))
 		# ROI pool for first data point
 		recorded_duration = np.load(os.path.join(self.recordings_dir, 'task2_duration.npy'))
 		start = timer()
-		valid_pred, _, _ = roi_pool(pred=self.ds.get_data(0, 'detections'),
-									xyz=self.ds.get_data(0, 'xyz'),
-									feat=self.ds.get_data(0, 'features'),
+		valid_pred, pooled_xyz, pooled_feat = roi_pool(pred=self.ds.get_data(scene, 'detections'),
+									xyz=self.ds.get_data(scene, 'xyz'),
+									feat=self.ds.get_data(scene, 'features'),
 									config=self.config['data'])
 		duration = timer() - start
+
+		# a,b,c,d = sample_proposals(valid_pred, self.ds.get_data(0, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=True)
+		#print(valid_pred[car])
+
+		#vis = v.Visualizer()
+		#vis.update(pooled_xyz[car] - valid_pred[car,0:3])
+		#vis.update_boxes(label2corners( np.array([valid_pred[car]])  )- valid_pred[car,0:3])
+		
+		# print(valid_pred.shape[0])
+
+		#for i in range(valid_pred.shape[0]):
+		#vis.update(pooled_xyz)
+		#vis.update(self.ds.get_data(scene, 'xyz'))
+		#vis.update_boxes(label2corners( valid_pred  ))
+		
+		
+		# vispy.app.run()
+
+		#assigned_targets, xyz, feat, iou, indices= sample_proposals(valid_pred, self.ds.get_data(scene, 'target'), pooled_xyz, pooled_feat, self.config['data'], train=True)
+
+		a = pooled_xyz[indices].reshape(-1, 3)
+		vis = v.Visualizer()
+		#vis.update(pooled_xyz[car] - valid_pred[car,0:3])
+		#vis.update_boxes(label2corners( np.array([valid_pred[car]])  )- valid_pred[car,0:3])
+		
+		# print(valid_pred.shape[0])
+
+		#for i in range(valid_pred.shape[0]):
+		#vis.update(pooled_xyz)
+		# vis.update(self.ds.get_data(scene, 'xyz'))
+		vis.update(a)
+		vis.update_boxes(label2corners( valid_pred[indices]  ))
+
+		vispy.app.run()
+
+
 		if not warmup:
 			print('duration [ms]:  {:.1f}/{:.1f}'.format(duration*1000, recorded_duration*1000))
 		# Check results
-
 		if not warmup:
 			self.display_test_result(
 				(valid_pred==recorded_valid_pred).all(),
@@ -90,8 +134,8 @@ class CheckTest():
 		loss = reg_loss(pred=torch.load(os.path.join(self.recordings_dir, 'task4_reg_pred.pt')),
 						target=torch.load(os.path.join(self.recordings_dir, 'task4_reg_target.pt')),
 						iou=torch.load(os.path.join(self.recordings_dir, 'task4_reg_iou.pt')))
-		recorded_loss = torch.load(os.path.join(self.recordings_dir, 'task4_reg_loss.pt'))
 
+		recorded_loss = torch.load(os.path.join(self.recordings_dir, 'task4_reg_loss.pt'))
 		print(loss)
 		print(recorded_loss)
 		self.display_test_result(loss == recorded_loss)
@@ -102,6 +146,7 @@ class CheckTest():
 		loss = cls_loss(pred=torch.load(os.path.join(self.recordings_dir, 'task4_cls_pred.pt')),
 						iou=torch.load(os.path.join(self.recordings_dir, 'task4_cls_iou.pt')))
 		recorded_loss = torch.load(os.path.join(self.recordings_dir, 'task4_cls_loss.pt'))
+
 		print(loss)
 		print(recorded_loss)
 		self.display_test_result(loss == recorded_loss)

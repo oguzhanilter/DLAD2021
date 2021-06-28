@@ -4,3 +4,33 @@ ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem 
 2021-06-26_01-52-33
 ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-236-228-14.compute-1.amazonaws.com
 
+2021-06-27_10-55-14
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-231-228-232.compute-1.amazonaws.com
+
+2021-06-27_16-02-20
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-44-192-69-229.compute-1.amazonaws.com
+
+2021-06-27_16-14-28
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-18-204-1-245.compute-1.amazonaws.com
+
+2021-06-27_17-33-43
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-44-192-252-72.compute-1.amazonaws.com
+
+2021-06-27_18-14-47
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-229-118-121.compute-1.amazonaws.com
+
+2021-06-27_22-58-45
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-239-90-47.compute-1.amazonaws.com
+
+2021-06-27_23-13-45
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-85-224-177.compute-1.amazonaws.com
+
+2021-06-27_23-38-51
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-35-175-113-29.compute-1.amazonaws.com
+
+2021-06-28_08-43-42
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-3-239-55-4.compute-1.amazonaws.com
+
+2021-06-28_09-30-12
+ssh -q -o StrictHostKeyChecking=no -o ConnectTimeout=180 -i ~/.ssh/dlad-aws.pem ubuntu@ec2-54-161-96-130.compute-1.amazonaws.com
+

@@ -22,6 +22,7 @@ def point_scene(points, pred, target, threshold=0.5, name='test'):
         all_boxes.append({'corners': p.tolist(),
                           'label': f'{int(100*iou[i])}',
                           'color': [0,255,0] if correct[i] else [255,0,0]})
+    
     for i, t in enumerate(label2corners(target)):
         all_boxes.append({'corners': t.tolist(),
                           'label': '',
