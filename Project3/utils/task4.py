@@ -27,14 +27,18 @@ class RegressionLoss(nn.Module):
 
         indices = iou >= self.config['positive_reg_lb']
 
-        # Translation
-        loss_trans  = self.loss(pred[indices, 0:3], target[indices, 0:3])
-        # Size
-        loss_size   = self.loss(pred[indices, 3:6], target[indices, 3:6])
-        # Rotation 
-        loss_rot    = self.loss(pred[indices, 6], target[indices, 6])
+        if indices.sum() > 0:
+            # Translation
+            loss_trans  = self.loss(pred[indices, 0:3], target[indices, 0:3])
+            # Size
+            loss_size   = self.loss(pred[indices, 3:6], target[indices, 3:6])
+            # Rotation 
+            loss_rot    = self.loss(pred[indices, 6], target[indices, 6])
 
-        return loss_trans + 3*loss_size + loss_rot
+            return loss_trans + 3*loss_size + loss_rot
+        
+        else:
+            return 0
 
 
 class ClassificationLoss(nn.Module):

@@ -45,12 +45,14 @@ def label2corners(label):
     return corners
 
 def poly_area(x,y):
-    """ Ref: http://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates """
-    return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
+    # Ref: http://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates 
+    area = 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
+    return area
 
 def polygon_clip(subjectPolygon, clipPolygon):
-   """ Clip a polygon with another polygon.
-   Ref: https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping#Python
+
+    # Ref: https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping#Python
+   """ Clip a polygon with another polygon
    Args:
      subjectPolygon: a list of (x,y) 2d points, any polygon.
      clipPolygon: a list of (x,y) 2d points, has to be *convex*
@@ -107,7 +109,6 @@ def convex_hull_intersection(p1, p2):
         return None, 0.0  
 
 def box3d_vol(corners):
-    ''' corners: (8,3) no assumption on axis direction '''
     a = np.sqrt(np.sum((corners[0,:] - corners[1,:])**2))
     b = np.sqrt(np.sum((corners[1,:] - corners[2,:])**2))
     c = np.sqrt(np.sum((corners[0,:] - corners[4,:])**2))
@@ -140,8 +141,6 @@ def get_iou(pred, target):
 
             rect1 = [(corners_pred[i,0], corners_pred[i,2]) for i in range(3,-1,-1)]
             rect2 = [(corners_target[i,0], corners_target[i,2]) for i in range(3,-1,-1)] 
-
-
 
             # area1 = poly_area(np.array(rect1)[:,0], np.array(rect1)[:,1])
             # area2 = poly_area(np.array(rect2)[:,0], np.array(rect2)[:,1])
@@ -180,7 +179,5 @@ def compute_recall(pred, target, threshold):
     # TP = len(np.argwhere(Exceed_threshold))
     TP = np.count_nonzero(np.sum(Exceed_threshold, axis=0))
     FN = M -  np.count_nonzero(np.sum(Exceed_threshold, axis=0))
-
-    #time.sleep(10)
 
     return TP / (TP + FN)

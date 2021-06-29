@@ -39,6 +39,9 @@ class CheckTest():
 			print('Consider improving your implementation as this will cause a bottleneck when training.')
 
 	def task1(self, warmup=False):
+
+
+
 		from utils.task1 import compute_recall
 		# Load recorded recall and duration for first 100 data points
 		recorded_recall = np.load(os.path.join(self.recordings_dir, 'task1_recall.npy'))
@@ -61,6 +64,14 @@ class CheckTest():
 		if not warmup:
 			self.display_test_result(np.abs(recall.mean() - recorded_recall.mean()) <= ERROR_TRESHOLD,
 									 duration.mean() > DURATION_THRESHOLD*recorded_duration.mean())
+
+		recall = np.empty((1711,))
+		for i in range(1711):
+			pred, target = self.ds.get_data(i, 'detections'), self.ds.get_data(i, 'target')
+
+			recall[i] = compute_recall(pred, target, threshold=self.config['eval']['t_rpn_recall'])
+
+		print(recall.mean())
 
 	def task2(self, warmup=False):
 		from utils.task2 import roi_pool
